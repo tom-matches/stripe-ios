@@ -150,6 +150,18 @@ public class AddressViewController: UIViewController {
         self.delegate = delegate
         super.init(nibName: nil, bundle: nil)
         navigationItem.leftBarButtonItem = UIBarButtonItem(customView: closeButton)
+        loadSpecs()
+    }
+    
+    private func loadSpecs() {
+        let semaphore = DispatchSemaphore(value: 1)
+        
+        // Load configuration
+        AddressSpecProvider.shared.loadAddressSpecs {
+            semaphore.signal()
+        }
+        
+        semaphore.wait()
     }
     
     required init?(coder: NSCoder) {

@@ -14,8 +14,13 @@ import PassKit
 import StripePaymentSheet
 import SwiftUI
 import UIKit
+import StripePayments
 
-class PaymentSheetTestPlayground: UIViewController {
+class PaymentSheetTestPlayground: UIViewController, STPAuthenticationContext {
+    func authenticationPresentingViewController() -> UIViewController {
+        return self
+    }
+
     static let endpointSelectorEndpoint = "https://stripe-mobile-payment-sheet-test-playground-v6.glitch.me/endpoints"
     static let defaultCheckoutEndpoint = "https://stripe-mobile-payment-sheet-test-playground-v6.glitch.me/checkout"
 
@@ -392,6 +397,13 @@ class PaymentSheetTestPlayground: UIViewController {
         loadSettingsFrom(settings: PaymentSheetPlaygroundSettings.defaultValues())
     }
 
+    @IBAction func didTapLoadEphemeralKey(_ sender: Any) {
+        listPaymentMethods()
+    }
+
+    @IBAction func didTapRemovePaymentMethod(_ sender: Any) {
+        removePaymentMethod()
+    }
     @IBAction func appearanceButtonTapped(_ sender: Any) {
         if #available(iOS 14.0, *) {
             let vc = UIHostingController(rootView: AppearancePlaygroundView(appearance: appearance, doneAction: { updatedAppearance in
@@ -500,6 +512,141 @@ extension PaymentSheetTestPlayground {
                     )
                 }
             }
+        }
+        task.resume()
+    }
+    func createSetupIntent() {
+
+        let merchantWalletModeContext = MyWalletModeContext()
+        merchantWalletModeContext.createSetupIntent{ clientSecret in
+            guard let clientSecret = clientSecret else {
+                return
+            }
+
+            // Present UI that collects payment method info
+            let paymentMethodCardParams = STPPaymentMethodCardParams()
+            paymentMethodCardParams.number = "4242424242424242"
+            paymentMethodCardParams.expMonth = 1
+            paymentMethodCardParams.expYear = 2030
+            paymentMethodCardParams.cvc = "315"
+
+            let paymentMethodParams = STPPaymentMethodParams(card: paymentMethodCardParams, billingDetails: nil, metadata: [:])
+
+            // Create payment method (this could be an interface, where we allow them to add a payment method by taking a paymentMethodParam and a authcontext)
+            //
+            STPPaymentHandler.sharedHandler.apiClient.createPaymentMethod(with: paymentMethodParams) { method, error in
+                guard let paymentMethodId = method?.stripeId else {
+                    print("failed to create payment method id")
+                    return
+                }
+                let setupIntentConfirmParams = STPSetupIntentConfirmParams(clientSecret: clientSecret, paymentMethodType: .card)
+                setupIntentConfirmParams.paymentMethodID = paymentMethodId
+                STPPaymentHandler.sharedHandler.confirmSetupIntent(setupIntentConfirmParams, with: self) { status, intent, error in
+                    print("status is: \(status)")
+                    print("intent is: \(intent)")
+                    print("error is: \(error)")
+
+                }
+
+            }
+
+
+        }
+    }
+
+    func listPaymentMethods() {
+        let walletModeContext = MyWalletModeContext()
+        let walletModeModel = WalletModeModel(walletModeContext: walletModeContext)
+        walletModeModel.listPaymentMethods(customerId: "cus_N9wbH9MKEuDikP")
+    }
+    func removePaymentMethod() {
+        let alertController = UIAlertController(title: "Remove payment method", message: nil, preferredStyle: .alert)
+        alertController.addTextField { textField in
+            textField.text = ""
+        }
+
+        let submitAction = UIAlertAction(title: "Submit", style: .default) { [unowned alertController] _ in
+            guard let textFields = alertController.textFields,
+                  let input = textFields[0].text else {
+                return
+            }
+            self.removePaymentMethod(paymentMethodId: input)
+        }
+        let cancelAction = UIAlertAction(title: "Cancel", style: .cancel)
+        alertController.addAction(submitAction)
+        alertController.addAction(cancelAction)
+        present(alertController, animated: true)
+    }
+    func removePaymentMethod(paymentMethodId: String) {
+
+    }
+
+    func confirmSetupIntent() {
+        let confirmParams = STPSetupIntentConfirmParams(clientSecret: "seti_1MPcmNLu5o3P18Zpuv4uJIzL_secret_N9wfjmFvnmvGMDML9TiKOjr7ney6mI2", paymentMethodType: .card)
+
+        STPPaymentHandler.sharedHandler.confirmSetupIntent(confirmParams, with: self) { status, intent, error in
+            print("status: \(status)")
+            print("intent: \(intent)")
+            print("error: \(error)")
+        }
+    }
+}
+//protocol STPCustomerPaymentMethodsContext {
+//    func createCustomerKey(completion: @escaping (String?) -> Void)
+//    func createSetupIntent(completion: @escaping (String?) -> Void)
+//}
+class MyWalletModeContext: WalletModeContext {
+
+    func createCustomerKey(customerId: String, completion: @escaping (String?) -> Void) {
+        let body = [ "customer_id": customerId] as [String: Any]
+        let url = URL(string: "https://pool-seen-sandal.glitch.me/create_customer_ephemeral_key")!
+        let session = URLSession.shared
+
+        let json = try! JSONSerialization.data(withJSONObject: body, options: [])
+        var urlRequest = URLRequest(url: url)
+        urlRequest.httpMethod = "POST"
+        urlRequest.httpBody = json
+        urlRequest.setValue("application/json", forHTTPHeaderField: "Content-type")
+        let task = session.dataTask(with: urlRequest) { data, response, error in
+            guard
+                error == nil,
+                let data = data,
+                let json = try? JSONSerialization.jsonObject(with: data, options: []) as? [String: Any] else {
+                print(error as Any)
+                return
+            }
+            guard let customerEphemeralKey = json["secret"] as? String else {
+                print("Failed to get secret")
+                return
+            }
+            completion(customerEphemeralKey)
+        }
+        task.resume()
+    }
+    func createSetupIntent(completion: @escaping (String?) -> Void) {
+        let body = [ "a": "b"
+        ] as [String: Any]
+        let url = URL(string: "https://pool-seen-sandal.glitch.me/create_setup_intent")!
+        let session = URLSession.shared
+
+        let json = try! JSONSerialization.data(withJSONObject: body, options: [])
+        var urlRequest = URLRequest(url: url)
+        urlRequest.httpMethod = "POST"
+        urlRequest.httpBody = json
+        urlRequest.setValue("application/json", forHTTPHeaderField: "Content-type")
+        let task = session.dataTask(with: urlRequest) { data, response, error in
+            guard
+                error == nil,
+                let data = data,
+                let json = try? JSONSerialization.jsonObject(with: data, options: []) as? [String: Any] else {
+                print(error as Any)
+                return
+            }
+            guard let clientSecret = json["client_secret"] as? String else {
+                print("failed")
+                return
+            }
+            completion(clientSecret)
         }
         task.resume()
     }

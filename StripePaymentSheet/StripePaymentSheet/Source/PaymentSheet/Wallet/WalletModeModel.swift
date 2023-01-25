@@ -18,7 +18,7 @@ public class WalletModeModel {
                                                 threeDSCustomizationSettings: threeDSCustomizationSettings,
                                                 formSpecPaymentHandler: nil)
     }
-
+/*
     // Currently assumes only cards
     public func listPaymentMethods(customerId: String) {
         walletModeContext.createCustomerKey(customerId: customerId) { ephemeralKey in
@@ -55,4 +55,5 @@ public class WalletModeModel {
             }
         }
     }
+ */
 }

@@ -46,6 +46,7 @@ public class PaymentSheet {
     public convenience init(paymentIntentClientSecret: String, configuration: Configuration) {
         self.init(
             intentClientSecret: .paymentIntent(clientSecret: paymentIntentClientSecret),
+            walletModeContext: nil,
             configuration: configuration
         )
     }
@@ -56,14 +57,29 @@ public class PaymentSheet {
     public convenience init(setupIntentClientSecret: String, configuration: Configuration) {
         self.init(
             intentClientSecret: .setupIntent(clientSecret: setupIntentClientSecret),
+            walletModeContext: nil,
             configuration: configuration
         )
     }
 
-    required init(intentClientSecret: IntentClientSecret, configuration: Configuration) {
+    /// Initializes a PaymentSheet
+    /// - Parameter walletModeContext: todo
+    /// - Parameter configuration: Configuration for the PaymentSheet. e.g. your business name, Customer details, etc.
+    public convenience init(walletModeContext: WalletModeContext, configuration: Configuration) {
+        self.init(
+            intentClientSecret: nil,
+            walletModeContext: walletModeContext,
+            configuration: configuration
+        )
+    }
+
+    required init(intentClientSecret: IntentClientSecret?,
+                  walletModeContext: WalletModeContext?,
+                  configuration: Configuration) {
         AnalyticsHelper.shared.generateSessionID()
         STPAnalyticsClient.sharedClient.addClass(toProductUsageIfNecessary: PaymentSheet.self)
         self.intentClientSecret = intentClientSecret
+        self.walletModeContext = walletModeContext
         self.configuration = configuration
         STPAnalyticsClient.sharedClient.logPaymentSheetInitialized(configuration: configuration)
     }
@@ -77,6 +93,10 @@ public class PaymentSheet {
         from presentingViewController: UIViewController,
         completion: @escaping (PaymentSheetResult) -> Void
     ) {
+        guard let intentClientSecret = intentClientSecret else {
+            presentWalletMode(from: presentingViewController, completion: completion)
+            return
+        }
         // Overwrite completion closure to retain self until called
         let completion: (PaymentSheetResult) -> Void = { status in
             // Dismiss if necessary
@@ -107,7 +127,8 @@ public class PaymentSheet {
         // Configure the Payment Sheet VC after loading the PI/SI, Customer, etc.
         PaymentSheet.load(
             clientSecret: intentClientSecret,
-            configuration: configuration
+            configuration: configuration,
+            walletModeContext: walletModeContext
         ) { result in
             switch result {
             case .success(let intent, let savedPaymentMethods, let isLinkEnabled):
@@ -185,6 +206,30 @@ public class PaymentSheet {
         presentingViewController.presentAsBottomSheet(bottomSheetViewController, appearance: configuration.appearance)
     }
 
+    @available(iOSApplicationExtension, unavailable)
+    @available(macCatalystApplicationExtension, unavailable)
+    public func presentWalletMode(
+        from presentingViewController: UIViewController,
+        completion: @escaping (PaymentSheetResult) -> Void
+    ) {
+        // This is currently a huge copy and paste of "present" in attempts to show new payment methods
+        // without creating an intent up front.
+        guard let walletModeContext = walletModeContext else {
+            return
+        }
+        walletModeContext.createSetupIntent() { clientSecret in
+            guard let clientSecret = clientSecret else {
+                completion(.failed(error: PaymentSheetError.unknown(debugDescription: "unable to create setup intent")))
+                return
+            }
+            self.intentClientSecret = .setupIntent(clientSecret: clientSecret)
+            //self.presentWalletMode(from: presentingViewController, clientSecret: clientSecret, completion: completion)
+            DispatchQueue.main.async {
+                self.present(from: presentingViewController, completion: completion)
+            }
+        }
+    }
+
     /// Deletes all persisted authentication state associated with a customer.
     ///
     /// You must call this method when the user logs out from your app.
@@ -209,7 +254,10 @@ public class PaymentSheet {
     // MARK: - Internal Properties
 
     /// The client secret this instance was initialized with
-    let intentClientSecret: IntentClientSecret
+    var intentClientSecret: IntentClientSecret!
+
+    /// Context for wallet mode
+    let walletModeContext: WalletModeContext?
 
     /// A user-supplied completion block. Nil until `present` is called.
     var completion: ((PaymentSheetResult) -> Void)?

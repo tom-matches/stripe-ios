@@ -177,7 +177,8 @@ extension PaymentSheet {
         ) {
             PaymentSheet.load(
                 clientSecret: clientSecret,
-                configuration: configuration
+                configuration: configuration,
+                walletModeContext: nil
             ) { result in
                 switch result {
                 case .success(let intent, let paymentMethods, let isLinkEnabled):

@@ -52,7 +52,7 @@ class PaymentSheetViewController: UIViewController {
 
     // MARK: - Writable Properties
     weak var delegate: PaymentSheetViewControllerDelegate?
-    private(set) var intent: Intent
+    private(set) var intent: Intent!
     enum Mode {
         case selectingSaved
         case addingNew
@@ -70,6 +70,9 @@ class PaymentSheetViewController: UIViewController {
             case .paymentIntent:
                 return configuration.customer != nil
             case .setupIntent:
+                return false
+            case .none:
+                //HACK! assert(false, "need to refactor the code a bit")
                 return false
             }
         }()
@@ -145,6 +148,9 @@ class PaymentSheetViewController: UIViewController {
                 return .pay(amount: paymentIntent.amount, currency: paymentIntent.currency)
             case .setupIntent:
                 return .setup
+            case .none:
+                //assert(false, "need to refactor the code a bit")
+                return .pay(amount: 0, currency: "WALLET!")
             }
         }()
 
@@ -166,7 +172,7 @@ class PaymentSheetViewController: UIViewController {
     }
 
     required init(
-        intent: Intent,
+        intent: Intent?,
         savedPaymentMethods: [STPPaymentMethod],
         configuration: PaymentSheet.Configuration,
         isApplePayEnabled: Bool,

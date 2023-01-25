@@ -5,6 +5,7 @@
 //
 
 public protocol WalletModeContext {
-    func createCustomerKey(customerId: String, completion: @escaping (String?) -> Void)
+    func createCustomerKey(completion: @escaping (String?) -> Void)
     func createSetupIntent(completion: @escaping (String?) -> Void)
+    var customerId: String {get}
 }

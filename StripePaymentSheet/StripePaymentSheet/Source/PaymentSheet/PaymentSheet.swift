@@ -39,6 +39,8 @@ public class PaymentSheet {
     /// The most recent error encountered by the customer, if any.
     public private(set) var mostRecentError: Error?
 
+    var isWalletMode: Bool = false
+
     /// Initializes a PaymentSheet
     /// - Parameter paymentIntentClientSecret: The [client secret](https://stripe.com/docs/api/payment_intents/object#payment_intent_object-client_secret) of a Stripe PaymentIntent object
     /// - Note: This can be used to complete a payment - don't log it, store it, or expose it to anyone other than the customer.
@@ -75,8 +77,10 @@ public class PaymentSheet {
     @available(macCatalystApplicationExtension, unavailable)
     public func present(
         from presentingViewController: UIViewController,
-        completion: @escaping (PaymentSheetResult) -> Void
+        completion: @escaping (PaymentSheetResult) -> Void,
+        isWalletMode: Bool = false
     ) {
+        self.isWalletMode = isWalletMode
         // Overwrite completion closure to retain self until called
         let completion: (PaymentSheetResult) -> Void = { status in
             // Dismiss if necessary
@@ -183,6 +187,16 @@ public class PaymentSheet {
         }
 
         presentingViewController.presentAsBottomSheet(bottomSheetViewController, appearance: configuration.appearance)
+    }
+
+    @available(iOSApplicationExtension, unavailable)
+    @available(macCatalystApplicationExtension, unavailable)
+    public func presentWalletMode(
+        from presentingViewController: UIViewController,
+        completion: @escaping (PaymentSheetResult) -> Void
+    ) {
+        isWalletMode = true
+        present(from: presentingViewController, completion: completion, isWalletMode: true)
     }
 
     /// Deletes all persisted authentication state associated with a customer.
@@ -318,6 +332,22 @@ extension PaymentSheet: PaymentSheetViewControllerDelegate {
             from: paymentSheetViewController,
             intent: paymentSheetViewController.intent
         )
+    }
+
+    func paymentSheetViewControllerShouldPresentInWalletMode(_ paymentSheetViewController: PaymentSheetViewController) -> Bool {
+        return isWalletMode
+    }
+    func paymentSheetViewControllerNeedsReload(
+        _ paymentSheetViewController: PaymentSheetViewController
+    ) {
+
+        // If we called function which calls the  PaymentSheet.load(...),
+        // this wouldn't work, because if we attempt to refresh the existing setupintent
+        // Our backend service says will say that the setupIntent is in a terminal state, and well, then if
+        // they try to add a new payment method, well, the setup intent is in a terminal state, so. that won't work.
+
+        // Even if we just added the payment method, and refreshed, it still wouldn't work due to the
+        // staleness of the setup intent. This makes integration awkward.
     }
 }
 

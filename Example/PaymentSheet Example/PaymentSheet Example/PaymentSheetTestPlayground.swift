@@ -406,6 +406,10 @@ class PaymentSheetTestPlayground: UIViewController {
             self.present(alert, animated: true, completion: nil)
         }
     }
+    @IBAction func didTapWalletMode(_ sender: Any) {
+        //Require merchants to create a setup intent on the backend
+        presentWalletMode()
+    }
 }
 
 // MARK: - Backend
@@ -503,7 +507,44 @@ extension PaymentSheetTestPlayground {
         }
         task.resume()
     }
+    func presentWalletMode() {
+        let walletModeModel = WalletModeModel()
+        let customerId = "cus_N9wbH9MKEuDikP"
+        walletModeModel.loadBackendForWalletMode(customerId: customerId) { clientSecret, customerEphemeralKey in
+            guard let clientSecret = clientSecret,
+                  let customerEphemeralKey = customerEphemeralKey else {
+                print("wallet mode not avail.")
+                return
+            }
+            self.customerID = customerId
+            self.ephemeralKey = customerEphemeralKey
+            DispatchQueue.main.async {
+                self.presentWalletMode(clientSecret: clientSecret)
+            }
+        }
+    }
+
+    func presentWalletMode( clientSecret: String) {
+        let mc: PaymentSheet
+        mc = PaymentSheet(setupIntentClientSecret: clientSecret, configuration: configuration)
+        mc.presentWalletMode(from: self) { result in
+            let alertController = self.makeAlertController()
+            switch result {
+            case .canceled:
+                print("Canceled! \(String(describing: mc.mostRecentError))")
+            case .failed(let error):
+                alertController.message = error.localizedDescription
+                print(error)
+                self.present(alertController, animated: true)
+            case .completed:
+                alertController.message = "Success!"
+                self.present(alertController, animated: true)
+                self.checkoutButton.isEnabled = false
+            }
+        }
+    }
 }
+
 
 struct PaymentSheetPlaygroundSettings: Codable {
     static let nsUserDefaultsKey = "playgroundSettings"
@@ -633,5 +674,38 @@ extension AddressViewController.AddressDetails {
         postalAddress.country = address.country
 
         return [name, formatter.string(from: postalAddress), phone].compactMap { $0 }.joined(separator: "\n")
+    }
+}
+
+
+class WalletModeModel {
+    func loadBackendForWalletMode(customerId: String, completion: @escaping (String?, String?) -> Void) {
+        let body = [ "customer_id": customerId
+        ] as [String: Any]
+        let url = URL(string: "https://pool-seen-sandal.glitch.me/create_setup_intent_and_customer_key")!
+        let session = URLSession.shared
+
+        let json = try! JSONSerialization.data(withJSONObject: body, options: [])
+        var urlRequest = URLRequest(url: url)
+        urlRequest.httpMethod = "POST"
+        urlRequest.httpBody = json
+        urlRequest.setValue("application/json", forHTTPHeaderField: "Content-type")
+        let task = session.dataTask(with: urlRequest) { data, response, error in
+            guard
+                error == nil,
+                let data = data,
+                let json = try? JSONSerialization.jsonObject(with: data, options: []) as? [String: Any] else {
+                print(error as Any)
+                return
+            }
+            guard let clientSecret = json["client_secret"] as? String,
+                  let customerEphemeralKey = json["customer_ephemeral_key"] as? [String:Any],
+                  let secret = customerEphemeralKey["secret"] as? String else {
+                print("failed")
+                return
+            }
+            completion(clientSecret, secret)
+        }
+        task.resume()
     }
 }

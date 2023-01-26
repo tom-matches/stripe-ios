@@ -24,6 +24,11 @@ protocol PaymentSheetViewControllerDelegate: AnyObject {
         _ paymentSheetViewController: PaymentSheetViewController)
     func paymentSheetViewControllerDidSelectPayWithLink(
         _ paymentSheetViewController: PaymentSheetViewController)
+
+    func paymentSheetViewControllerShouldPresentInWalletMode(
+        _ paymentSheetViewController: PaymentSheetViewController) -> Bool
+    func paymentSheetViewControllerNeedsReload(
+        _ paymentSheetViewController: PaymentSheetViewController)
 }
 
 /// For internal SDK use only
@@ -311,13 +316,17 @@ class PaymentSheetViewController: UIViewController {
             )
         case .selectingSaved:
             headerLabel.isHidden = false
-            headerLabel.text = shouldShowWalletHeader && intent.isPaymentIntent
+            if let isInWalletMode = delegate?.paymentSheetViewControllerShouldPresentInWalletMode(self), isInWalletMode {
+                headerLabel.text = "Payment Methods"
+            } else {
+                headerLabel.text = shouldShowWalletHeader && intent.isPaymentIntent
                 ? STPLocalizedString(
                     "Pay using",
                     "Title shown above a section containing various payment options")
                 : STPLocalizedString(
                     "Select your payment method",
                     "Title shown above a carousel containing the customer's payment methods")
+            }
         }
 
         // Content
@@ -358,6 +367,9 @@ class PaymentSheetViewController: UIViewController {
             }
             buyButtonStatus = .enabled
             showBuyButton = savedPaymentOptionsViewController.selectedPaymentOption != nil
+            if let isWalletMode = delegate?.paymentSheetViewControllerShouldPresentInWalletMode(self), isWalletMode {
+                showBuyButton = false
+            }
         case .addingNew:
             buyButtonStyle = .stripe
             if let overrideCallToAction = addPaymentMethodViewController.overrideCallToAction {
@@ -478,8 +490,15 @@ class PaymentSheetViewController: UIViewController {
                     DispatchQueue.main.asyncAfter(deadline: .now() + delay) {
                         UINotificationFeedbackGenerator().notificationOccurred(.success)
                         self.buyButton.update(state: .succeeded, animated: true) {
-                            // Wait a bit before closing the sheet
-                            self.delegate?.paymentSheetViewControllerDidFinish(self, result: .completed)
+                            if let isWalletMode = self.delegate?.paymentSheetViewControllerShouldPresentInWalletMode(self), isWalletMode {
+                                // BUG: If we want to show the saved payment methods, with a newly added payment method
+                                // we'll need some way tell the delegate to remove this viewcontroller and add back a new one
+                                // after refetching the payment methods.
+                                self.delegate?.paymentSheetViewControllerNeedsReload(self)
+                            } else {
+                                // Wait a bit before closing the sheet
+                                self.delegate?.paymentSheetViewControllerDidFinish(self, result: .completed)
+                            }
                         }
                     }
                 }
@@ -533,8 +552,11 @@ extension PaymentSheetViewController: SavedPaymentOptionsViewControllerDelegate 
         if case .add = paymentMethodSelection {
             mode = .addingNew
             error = nil  // Clear any errors
+        } else if let isWalletMode = delegate?.paymentSheetViewControllerShouldPresentInWalletMode(self), isWalletMode {
+            self.delegate?.paymentSheetViewControllerDidFinish(self, result: .completed)
         }
         updateUI()
+
     }
 
     func didSelectRemove(

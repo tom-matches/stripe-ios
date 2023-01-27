@@ -344,6 +344,9 @@ class PaymentSheetTestPlayground: UIViewController {
         }
     }
 
+    @IBAction func didtapWalletMode(_ sender: Any) {
+        presentWalletMode()
+    }
     @objc
     func didTapSelectPaymentMethodButton() {
         paymentSheetFlowController?.presentPaymentOptions(from: self) {
@@ -503,6 +506,51 @@ extension PaymentSheetTestPlayground {
         }
         task.resume()
     }
+    func presentWalletMode() {
+        let customerId = "cus_N9wbH9MKEuDikP"
+        let backend = WalletModeBackend(customerId: customerId)
+/*
+        let create = { completionBlock in
+            backend.createSetupIntent(completion: completionBlock)
+        }
+        let customerConfig = WalletModeConfiguration.CustomerConfiguration(id: customerId, ephemeralKeySecret: "123")
+
+        let walletModeConfiguration = WalletModeConfiguration(customer: customerConfig, createSetupIntent: create)
+        let walletMode = WalletMode(configuration: walletModeConfiguration)
+        walletMode.present(from: self)
+*/
+
+        backend.loadBackendCustomerEphemeralKey { customerEphemeralKey in
+            guard let ephemeralKeySecret = customerEphemeralKey else {
+                return
+            }
+            let customerConfig = WalletModeConfiguration.CustomerConfiguration(id: customerId, ephemeralKeySecret: ephemeralKeySecret)
+
+//            let createSetupIntent = backend.createSetupIntent
+//            let createSetupIntent: ( ((String?)->Void) -> Void) = { completion in
+//                backend.createSetupIntent { secretKey in
+//                    guard let key = secretKey else {
+//                        completion(nil)
+//                        return
+//                    }
+//                    completion(key)
+//                }
+//            }
+//            let create: (( @escaping (String?) -> Void ) -> Void) = { completionBlock in
+//                backend.createSetupIntent(completion:  completionBlock)
+//            }
+//            let create =
+
+            let walletModeConfiguration = WalletModeConfiguration(customer: customerConfig, createSetupIntent: { completionBlock in
+                backend.createSetupIntent(completion: completionBlock)
+            })
+            let walletMode = WalletMode(configuration: walletModeConfiguration)
+            walletMode.present(from: self)
+
+        }
+
+
+    }
 }
 
 struct PaymentSheetPlaygroundSettings: Codable {
@@ -633,5 +681,73 @@ extension AddressViewController.AddressDetails {
         postalAddress.country = address.country
 
         return [name, formatter.string(from: postalAddress), phone].compactMap { $0 }.joined(separator: "\n")
+    }
+}
+
+
+class WalletModeBackend {
+    let customerId: String
+
+    public init(customerId: String) {
+        self.customerId = customerId
+    }
+
+    func loadBackendCustomerEphemeralKey(completion: @escaping (String?) -> Void) {
+        let body = [ "customer_id": self.customerId
+        ] as [String: Any]
+        let url = URL(string: "https://pool-seen-sandal.glitch.me/create_customer_ephemeral_key")!
+        let session = URLSession.shared
+
+        let json = try! JSONSerialization.data(withJSONObject: body, options: [])
+        var urlRequest = URLRequest(url: url)
+        urlRequest.httpMethod = "POST"
+        urlRequest.httpBody = json
+        urlRequest.setValue("application/json", forHTTPHeaderField: "Content-type")
+        let task = session.dataTask(with: urlRequest) { data, response, error in
+            guard
+                error == nil,
+                let data = data,
+                let json = try? JSONSerialization.jsonObject(with: data, options: []) as? [String: Any] else {
+                print(error as Any)
+                completion(nil)
+                return
+            }
+            guard let secret = json["secret"] as? String else {
+                print("failed")
+                completion(nil)
+                return
+            }
+            completion(secret)
+        }
+        task.resume()
+    }
+    func createSetupIntent( completion: @escaping (String?) -> Void) {
+        let body = [ "customer_id": self.customerId,
+        ] as [String: Any]
+        let url = URL(string: "https://pool-seen-sandal.glitch.me/create_setup_intent")!
+        let session = URLSession.shared
+
+        let json = try! JSONSerialization.data(withJSONObject: body, options: [])
+        var urlRequest = URLRequest(url: url)
+        urlRequest.httpMethod = "POST"
+        urlRequest.httpBody = json
+        urlRequest.setValue("application/json", forHTTPHeaderField: "Content-type")
+        let task = session.dataTask(with: urlRequest) { data, response, error in
+            guard
+                error == nil,
+                let data = data,
+                let json = try? JSONSerialization.jsonObject(with: data, options: []) as? [String: Any] else {
+                print(error as Any)
+                completion(nil)
+                return
+            }
+            guard let secret = json["client_secret"] as? String else {
+                print("failed")
+                completion(nil)
+                return
+            }
+            completion(secret)
+        }
+        task.resume()
     }
 }

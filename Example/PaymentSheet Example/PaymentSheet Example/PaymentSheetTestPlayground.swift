@@ -524,29 +524,18 @@ extension PaymentSheetTestPlayground {
             guard let ephemeralKeySecret = customerEphemeralKey else {
                 return
             }
-            let customerConfig = WalletModeConfiguration.CustomerConfiguration(id: customerId, ephemeralKeySecret: ephemeralKeySecret)
+            let customerConfig = WalletModeConfiguration.CustomerConfiguration(id: customerId,
+                                                                               ephemeralKeySecret: ephemeralKeySecret)
 
-//            let createSetupIntent = backend.createSetupIntent
-//            let createSetupIntent: ( ((String?)->Void) -> Void) = { completion in
-//                backend.createSetupIntent { secretKey in
-//                    guard let key = secretKey else {
-//                        completion(nil)
-//                        return
-//                    }
-//                    completion(key)
-//                }
-//            }
-//            let create: (( @escaping (String?) -> Void ) -> Void) = { completionBlock in
-//                backend.createSetupIntent(completion:  completionBlock)
-//            }
-//            let create =
-
-            let walletModeConfiguration = WalletModeConfiguration(customer: customerConfig, createSetupIntent: { completionBlock in
-                backend.createSetupIntent(completion: completionBlock)
-            })
+            let walletModeConfiguration = WalletModeConfiguration(
+                customer: customerConfig,
+                createSetupIntentHandler: { completionBlock in
+                    backend.createSetupIntent(completion: completionBlock)
+                })
             let walletMode = WalletMode(configuration: walletModeConfiguration)
-            walletMode.present(from: self)
-
+            DispatchQueue.main.async {
+                walletMode.present(from: self)
+            }
         }
 
 

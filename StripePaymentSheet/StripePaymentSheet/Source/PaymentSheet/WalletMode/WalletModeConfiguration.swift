@@ -5,8 +5,9 @@
 //
 
 import Foundation
+import UIKit
 
-public typealias CreateSetupIntentCallback = ((@escaping (String?) -> Void) -> Void)
+public typealias CreateSetupIntentHandlerCallback = ((@escaping (String?) -> Void) -> Void)
 
 public struct WalletModeConfiguration {
 
@@ -26,13 +27,36 @@ public struct WalletModeConfiguration {
         }
     }
 
+    private var styleRawValue: Int = 0  // SheetStyle.automatic.rawValue
+    /// The color styling to use for PaymentSheet UI
+    /// Default value is SheetStyle.automatic
+    /// @see SheetStyle
+    @available(iOS 13.0, *)
+    public var style: PaymentSheet.UserInterfaceStyle {  // stored properties can't be marked @available which is why this uses the styleRawValue private var
+        get {
+            return PaymentSheet.UserInterfaceStyle(rawValue: styleRawValue)!
+        }
+        set {
+            styleRawValue = newValue.rawValue
+        }
+    }
+
+    /// Describes the appearance of PaymentSheet
+    public var appearance = PaymentSheet.Appearance.default
+
+    /// Configuration related to the Stripe Customer
     public var customer: CustomerConfiguration
-    public var createSetupIntent: CreateSetupIntentCallback?
+
+    /// Handler for creating a setup intent
+    public var createSetupIntentHandler: CreateSetupIntentHandlerCallback?
+
+    /// The APIClient instance used to make requests to Stripe
+    public var apiClient: STPAPIClient = STPAPIClient.shared
 
     public init (customer: CustomerConfiguration,
-                 createSetupIntent: CreateSetupIntentCallback?) {
+                 createSetupIntentHandler: CreateSetupIntentHandlerCallback?) {
         self.customer = customer
-        self.createSetupIntent = createSetupIntent
+        self.createSetupIntentHandler = createSetupIntentHandler
     }        
     
 }

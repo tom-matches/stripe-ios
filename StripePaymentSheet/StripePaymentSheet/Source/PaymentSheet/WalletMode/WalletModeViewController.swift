@@ -59,7 +59,30 @@ class WalletModeViewController: UIViewController {
     private lazy var paymentContainerView: DynamicHeightContainerView = {
         return DynamicHeightContainerView()
     }()
+    private lazy var actionButton: ConfirmButton = {
+//        let callToAction: ConfirmButton.CallToActionType = {
+//            if let customCtaLabel = configuration.primaryButtonLabel {
+//                return .customWithLock(title: customCtaLabel)
+//            }
+//
+//            switch intent {
+//            case .paymentIntent(let paymentIntent):
+//                return .pay(amount: paymentIntent.amount, currency: paymentIntent.currency)
+//            case .setupIntent:
+//                return .setup
+//            }
+//        }()
 
+        let button = ConfirmButton(
+            callToAction: .setup,
+            applePayButtonType: .plain,
+            appearance: configuration.appearance,
+            didTap: { [weak self] in
+                self?.didTapActionButton()
+            }
+        )
+        return button
+    }()
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
@@ -85,7 +108,8 @@ class WalletModeViewController: UIViewController {
         let stackView = UIStackView(arrangedSubviews: [
             //headerLabel,
            //walletHeader,
-            paymentContainerView
+            paymentContainerView,
+            actionButton
             //errorLabel, buyButton, bottomNoticeTextField
         ])
         stackView.directionalLayoutMargins = PaymentSheetUI.defaultMargins
@@ -121,7 +145,12 @@ class WalletModeViewController: UIViewController {
 //
 //        case .selectingSaved:
 //        }
-
+        switch(mode) {
+        case .addingNew:
+            actionButton.isHidden = false
+        case .selectingSaved:
+            actionButton.isHidden = true
+        }
         // Content
         switchContentIfNecessary(
             to: mode == .selectingSaved
@@ -147,6 +176,18 @@ class WalletModeViewController: UIViewController {
             }
 
         }
+    }
+    private func didTapActionButton() {
+        guard mode == .addingNew,
+        let newPaymentOption = addPaymentMethodViewController?.paymentOption else {
+            //Button will only appear while adding a new payment method
+            return
+        }
+        addPaymentOption(paymentOption: newPaymentOption)
+
+    }
+    private func addPaymentOption(paymentOption: PaymentOption) {
+        print("todo, make calls out to sevice to actually add payment method")
     }
 }
 

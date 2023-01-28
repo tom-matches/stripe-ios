@@ -31,7 +31,14 @@ class WalletModeAddPaymentMethodViewController: UIViewController {
     var selectedPaymentMethodType: PaymentSheet.PaymentMethodType {
         return paymentMethodTypesView.selected
     }
-
+    var paymentOption: PaymentOption? {
+        if let params = paymentMethodFormElement.updateParams(
+            params: IntentConfirmParams(type: selectedPaymentMethodType)
+        ) {
+            return .new(confirmParams: params)
+        }
+        return nil
+    }
     // MARK: - Writable Properties
     private let intent: Intent
     private let configuration: WalletModeConfiguration

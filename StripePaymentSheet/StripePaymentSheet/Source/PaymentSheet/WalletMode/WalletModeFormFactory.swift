@@ -14,7 +14,7 @@ class WalletModeFormFactory {
 
     let paymentMethod: PaymentSheet.PaymentMethodType
     let intent: Intent
-    let configuration: WalletModeConfiguration
+    let configuration: WalletMode.Configuration
 
     var theme: ElementsUITheme {
         return configuration.appearance.asElementsTheme
@@ -22,7 +22,7 @@ class WalletModeFormFactory {
 
     init(
         intent: Intent,
-        configuration: WalletModeConfiguration,
+        configuration: WalletMode.Configuration,
         paymentMethod: PaymentSheet.PaymentMethodType
     ) {
         self.intent = intent
@@ -118,7 +118,7 @@ class WalletModeFormFactory {
     }
 }
 
-private extension WalletModeConfiguration.Address {
+private extension WalletMode.Address {
     var addressSectionDefaults: AddressSectionElement.AddressDetails {
         return .init(
             address: .init(

@@ -9,7 +9,7 @@ import UIKit
 
 public typealias CreateSetupIntentHandlerCallback = ((@escaping (String?) -> Void) -> Void)
 
-public struct WalletModeConfiguration {
+extension WalletMode {
 
     /// Configuration related to the Stripe Customer
     public struct CustomerConfiguration {
@@ -26,47 +26,6 @@ public struct WalletModeConfiguration {
             self.ephemeralKeySecret = ephemeralKeySecret
         }
     }
-
-    private var styleRawValue: Int = 0  // SheetStyle.automatic.rawValue
-    /// The color styling to use for PaymentSheet UI
-    /// Default value is SheetStyle.automatic
-    /// @see SheetStyle
-    @available(iOS 13.0, *)
-    public var style: PaymentSheet.UserInterfaceStyle {  // stored properties can't be marked @available which is why this uses the styleRawValue private var
-        get {
-            return PaymentSheet.UserInterfaceStyle(rawValue: styleRawValue)!
-        }
-        set {
-            styleRawValue = newValue.rawValue
-        }
-    }
-
-    /// A closure that returns the customer's shipping details.
-    /// This is used to display a "Billing address is same as shipping" checkbox if `defaultBillingDetails` is not provided
-    /// If `name` and `line1` are populated, it's also [attached to the PaymentIntent](https://stripe.com/docs/api/payment_intents/object#payment_intent_object-shipping) during payment.
-    public var shippingDetails: () -> AddressViewController.AddressDetails? = { return nil }
-
-
-    /// Wallet Mode pre-populates fields with the values provided.
-    public var defaultBillingDetails: BillingDetails = BillingDetails()
-
-    /// Describes the appearance of PaymentSheet
-    public var appearance = PaymentSheet.Appearance.default
-
-    /// Configuration related to the Stripe Customer
-    public var customer: CustomerConfiguration
-
-    /// Handler for creating a setup intent
-    public var createSetupIntentHandler: CreateSetupIntentHandlerCallback?
-
-    /// The APIClient instance used to make requests to Stripe
-    public var apiClient: STPAPIClient = STPAPIClient.shared
-
-    public init (customer: CustomerConfiguration,
-                 createSetupIntentHandler: CreateSetupIntentHandlerCallback?) {
-        self.customer = customer
-        self.createSetupIntentHandler = createSetupIntentHandler
-    }        
 
     /// An address.
     public struct Address: Equatable {
@@ -119,5 +78,48 @@ public struct WalletModeConfiguration {
 
         /// The customer's phone number without formatting (e.g. 5551234567)
         public var phone: String?
+    }
+
+    public struct Configuration {
+        private var styleRawValue: Int = 0  // SheetStyle.automatic.rawValue
+        /// The color styling to use for PaymentSheet UI
+        /// Default value is SheetStyle.automatic
+        /// @see SheetStyle
+        @available(iOS 13.0, *)
+        public var style: PaymentSheet.UserInterfaceStyle {  // stored properties can't be marked @available which is why this uses the styleRawValue private var
+            get {
+                return PaymentSheet.UserInterfaceStyle(rawValue: styleRawValue)!
+            }
+            set {
+                styleRawValue = newValue.rawValue
+            }
+        }
+
+        /// A closure that returns the customer's shipping details.
+        /// This is used to display a "Billing address is same as shipping" checkbox if `defaultBillingDetails` is not provided
+        /// If `name` and `line1` are populated, it's also [attached to the PaymentIntent](https://stripe.com/docs/api/payment_intents/object#payment_intent_object-shipping) during payment.
+        public var shippingDetails: () -> AddressViewController.AddressDetails? = { return nil }
+
+
+        /// Wallet Mode pre-populates fields with the values provided.
+        public var defaultBillingDetails: BillingDetails = BillingDetails()
+
+        /// Describes the appearance of PaymentSheet
+        public var appearance = PaymentSheet.Appearance.default
+
+        /// Configuration related to the Stripe Customer
+        public var customer: CustomerConfiguration
+
+        /// Handler for creating a setup intent
+        public var createSetupIntentHandler: CreateSetupIntentHandlerCallback?
+
+        /// The APIClient instance used to make requests to Stripe
+        public var apiClient: STPAPIClient = STPAPIClient.shared
+
+        public init (customer: CustomerConfiguration,
+                     createSetupIntentHandler: CreateSetupIntentHandlerCallback?) {
+            self.customer = customer
+            self.createSetupIntentHandler = createSetupIntentHandler
+        }
     }
 }

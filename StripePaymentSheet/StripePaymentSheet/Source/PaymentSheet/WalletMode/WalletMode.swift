@@ -12,7 +12,7 @@ import UIKit
 @_spi(STP) import StripePaymentsUI
 
 public class WalletMode {
-    let configuration: WalletModeConfiguration
+    let configuration: WalletMode.Configuration
 
     lazy var bottomSheetViewController: BottomSheetViewController = {
         let isTestMode = configuration.apiClient.isTestmode
@@ -38,7 +38,7 @@ public class WalletMode {
         return vc
     }()
 
-    public init(configuration: WalletModeConfiguration) {
+    public init(configuration: WalletMode.Configuration) {
         self.configuration = configuration
     }
 

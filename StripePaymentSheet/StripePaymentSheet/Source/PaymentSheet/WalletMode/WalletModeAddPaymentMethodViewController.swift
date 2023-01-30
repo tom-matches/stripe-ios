@@ -41,7 +41,7 @@ class WalletModeAddPaymentMethodViewController: UIViewController {
     }
     // MARK: - Writable Properties
     private let intent: Intent
-    private let configuration: WalletModeConfiguration
+    private let configuration: WalletMode.Configuration
 
     private lazy var paymentMethodFormElement: PaymentMethodElement = {
 //        if selectedPaymentMethodType == .USBankAccount,
@@ -76,7 +76,7 @@ class WalletModeAddPaymentMethodViewController: UIViewController {
 
     required init(
         intent: Intent,
-        configuration: WalletModeConfiguration,
+        configuration: WalletMode.Configuration,
         delegate: WalletModeAddPaymentMethodViewControllerDelegate
     ) {
         self.configuration = configuration

@@ -524,10 +524,10 @@ extension PaymentSheetTestPlayground {
             guard let ephemeralKeySecret = customerEphemeralKey else {
                 return
             }
-            let customerConfig = WalletModeConfiguration.CustomerConfiguration(id: customerId,
+            let customerConfig = WalletMode.CustomerConfiguration(id: customerId,
                                                                                ephemeralKeySecret: ephemeralKeySecret)
 
-            let walletModeConfiguration = WalletModeConfiguration(
+            let walletModeConfiguration = WalletMode.Configuration(
                 customer: customerConfig,
                 createSetupIntentHandler: { completionBlock in
                     backend.createSetupIntent(completion: completionBlock)

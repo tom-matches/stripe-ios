@@ -19,7 +19,7 @@ class WalletModeViewController: UIViewController {
 
     // MARK: - Read-only Properties
     let savedPaymentMethods: [STPPaymentMethod]
-    let configuration: WalletModeConfiguration
+    let configuration: WalletMode.Configuration
 
     // MARK: - Writable Properties
     weak var delegate: WalletModeViewControllerDelegate?
@@ -89,9 +89,9 @@ class WalletModeViewController: UIViewController {
 
     required init(
         savedPaymentMethods: [STPPaymentMethod],
-        configuration: WalletModeConfiguration,
+        configuration: WalletMode.Configuration,
 // TODO
-//        isApplePayEnabled: Bool,,
+//        isApplePayEnabled: Bool,
         delegate: WalletModeViewControllerDelegate
     ) {
         self.savedPaymentMethods = savedPaymentMethods

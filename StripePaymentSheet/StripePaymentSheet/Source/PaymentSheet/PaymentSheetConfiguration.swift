@@ -136,7 +136,7 @@ extension PaymentSheet {
         public var returnURL: String?
 
         /// PaymentSheet pre-populates fields with the values provided.
-        public var defaultBillingDetails: BillingDetails = BillingDetails()
+        public var defaultBillingDetails: PaymentSheet.BillingDetails = PaymentSheet.BillingDetails()
 
         /// PaymentSheet offers users an option to save some payment methods for later use.
         /// Default value is .automatic

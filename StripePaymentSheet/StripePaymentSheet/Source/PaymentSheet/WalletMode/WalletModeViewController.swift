@@ -302,12 +302,15 @@ extension WalletModeViewController: SavedPaymentOptionsViewControllerDelegate {
     func didUpdateSelection(
         viewController: SavedPaymentOptionsViewController,
         paymentMethodSelection: SavedPaymentOptionsViewController.Selection) {
+            // TODO: Add some boolean flag here to avoid making duplicate calls
             if case .add = paymentMethodSelection {
                 mode = .addingNew
-                // error = nil  // Clear any errors
-                if let intent = self.intent {
+                error = nil  // Clear any errors
+                if let intent = self.intent,
+                   !intent.isInTerminalState {
                     // TODO: check to make sure intent isn't final
                     initAddPaymentMethodViewController(intent: intent)
+                    self.updateUI()
                 } else {
                     self.configuration.createSetupIntentHandler?({ result in
                         guard let clientSecret = result else {
@@ -320,6 +323,7 @@ extension WalletModeViewController: SavedPaymentOptionsViewControllerDelegate {
                                 self.updateUI()
                                 return
                             }
+                            self.intent = intent
                             self.initAddPaymentMethodViewController(intent: intent)
                             self.updateUI()
                         }

@@ -12,6 +12,8 @@ import Foundation
 import UIKit
 
 protocol WalletModeViewControllerDelegate: AnyObject {
+    func walletModeViewControllerDidFinish(_ walletModeViewController: WalletModeViewController, result: WalletModeResult)
+    func walletModeViewControllerDidCancel(_ walletModeViewController: WalletModeViewController)
 }
 
 @objc(STP_Internal_WalletModeViewController)
@@ -28,7 +30,9 @@ class WalletModeViewController: UIViewController {
         case selectingSaved
         case addingNew
     }
+
     private var mode: Mode
+    private(set) var error: Error?
     private var intent: Intent?
     private var addPaymentMethodViewController: WalletModeAddPaymentMethodViewController?
 
@@ -138,26 +142,59 @@ class WalletModeViewController: UIViewController {
         updateUI(animated: false)
     }
 
+    // MARK: Private Methods
     private func updateUI(animated: Bool = true) {
 
-//        switch mode {
-//        case .addingNew:
-//
-//        case .selectingSaved:
-//        }
+        // Update our views (starting from the top of the screen):
+        configureNavBar()
+
         switch(mode) {
         case .addingNew:
             actionButton.isHidden = false
         case .selectingSaved:
             actionButton.isHidden = true
         }
-        // Content
-        switchContentIfNecessary(
-            to: mode == .selectingSaved
-                ? savedPaymentOptionsViewController : addPaymentMethodViewController!,
-            containerView: paymentContainerView
-        )
+
+        guard let contentViewController = contentViewControllerFor(mode: mode) else {
+            // TODO: if we return nil here, it means we didn't create a
+            // view controller, and if this happens, it is most likely because didn't
+            // properly create setupIntent -- how do we want to handlet his situation?
+            return
+        }
+
+        switchContentIfNecessary(to: contentViewController, containerView: paymentContainerView)
     }
+    private func contentViewControllerFor(mode: Mode) -> UIViewController? {
+        if mode == .addingNew {
+            return addPaymentMethodViewController
+        }
+        return savedPaymentOptionsViewController
+    }
+
+    private func configureNavBar() {
+        navigationBar.setStyle(
+            {
+                switch mode {
+                case .selectingSaved:
+                    if self.savedPaymentOptionsViewController.hasRemovablePaymentMethods {
+                        self.configureEditSavedPaymentMethodsButton()
+                        return .close(showAdditionalButton: true)
+                    } else {
+                        self.navigationBar.additionalButton.removeTarget(
+                            self, action: #selector(didSelectEditSavedPaymentMethodsButton),
+                            for: .touchUpInside)
+                        return .close(showAdditionalButton: false)
+                    }
+                case .addingNew:
+                    self.navigationBar.additionalButton.removeTarget(
+                        self, action: #selector(didSelectEditSavedPaymentMethodsButton),
+                        for: .touchUpInside)
+                    return savedPaymentMethods.isEmpty ? .close(showAdditionalButton: false) : .back
+                }
+            }())
+
+    }
+
     func initAddPaymentMethodViewController(intent: Intent) {
         self.addPaymentMethodViewController = WalletModeAddPaymentMethodViewController(
             intent: intent,
@@ -189,6 +226,27 @@ class WalletModeViewController: UIViewController {
     private func addPaymentOption(paymentOption: PaymentOption) {
         print("todo, make calls out to sevice to actually add payment method")
     }
+
+    // MARK: Helpers
+    func configureEditSavedPaymentMethodsButton() {
+        if savedPaymentOptionsViewController.isRemovingPaymentMethods {
+            navigationBar.additionalButton.setTitle(UIButton.doneButtonTitle, for: .normal)
+            actionButton.update(state: .disabled)
+        } else {
+            actionButton.update(state: .enabled)
+            navigationBar.additionalButton.setTitle(UIButton.editButtonTitle, for: .normal)
+        }
+        navigationBar.additionalButton.accessibilityIdentifier = "edit_saved_button"
+        navigationBar.additionalButton.titleLabel?.adjustsFontForContentSizeCategory = true
+        navigationBar.additionalButton.addTarget(
+            self, action: #selector(didSelectEditSavedPaymentMethodsButton), for: .touchUpInside)
+    }
+
+    @objc
+    func didSelectEditSavedPaymentMethodsButton() {
+        savedPaymentOptionsViewController.isRemovingPaymentMethods.toggle()
+        configureEditSavedPaymentMethodsButton()
+    }
 }
 
 extension WalletModeViewController: BottomSheetContentViewController {
@@ -209,11 +267,23 @@ extension WalletModeViewController: BottomSheetContentViewController {
 /// :nodoc:
 extension WalletModeViewController: SheetNavigationBarDelegate {
     func sheetNavigationBarDidClose(_ sheetNavigationBar: SheetNavigationBar) {
-        // TODO
+        delegate?.walletModeViewControllerDidCancel(self)
+        if savedPaymentOptionsViewController.isRemovingPaymentMethods {
+            savedPaymentOptionsViewController.isRemovingPaymentMethods = false
+            configureEditSavedPaymentMethodsButton()
+        }
+
     }
 
     func sheetNavigationBarDidBack(_ sheetNavigationBar: SheetNavigationBar) {
-        // TODO
+        switch mode {
+        case .addingNew:
+            error = nil
+            mode = .selectingSaved
+            updateUI()
+        default:
+            assertionFailure()
+        }
     }
 }
 extension WalletModeViewController: WalletModeAddPaymentMethodViewControllerDelegate {
@@ -256,7 +326,6 @@ extension WalletModeViewController: SavedPaymentOptionsViewControllerDelegate {
                     })
                 }
             }
-//            updateUI()
         }
     func didSelectRemove(
         viewController: SavedPaymentOptionsViewController,

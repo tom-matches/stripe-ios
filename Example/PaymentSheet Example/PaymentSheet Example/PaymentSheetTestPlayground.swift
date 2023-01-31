@@ -534,7 +534,9 @@ extension PaymentSheetTestPlayground {
                 })
             let walletMode = WalletMode(configuration: walletModeConfiguration)
             DispatchQueue.main.async {
-                walletMode.present(from: self)
+                walletMode.present(from: self) { result in
+                    print("result:\(result)")
+                }
             }
         }
 

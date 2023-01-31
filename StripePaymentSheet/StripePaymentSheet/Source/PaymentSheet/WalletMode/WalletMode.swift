@@ -11,6 +11,16 @@ import UIKit
 @_spi(STP) import StripePayments
 @_spi(STP) import StripePaymentsUI
 
+/// TODO -
+@frozen public enum WalletModeResult {
+    /// TODO
+    case completed
+
+    /// The attempt failed.
+    /// - Parameter error: The error encountered by the customer. You can display its `localizedDescription` to the customer.
+    case failed(error: Error)
+}
+
 public class WalletMode {
     let configuration: WalletMode.Configuration
 
@@ -44,9 +54,33 @@ public class WalletMode {
 
     @available(iOSApplicationExtension, unavailable)
     @available(macCatalystApplicationExtension, unavailable)
-    public func present(from presentingViewController: UIViewController) {
+    public func present(from presentingViewController: UIViewController,
+                        completion: @escaping (WalletModeResult) -> Void
+    ) {
+        // Overwrite completion closure to retain self until called
+        let completion: (WalletModeResult) -> Void = { status in
+            // Dismiss if necessary
+            if let presentingViewController = self.bottomSheetViewController.presentingViewController {
+                // Calling `dismiss()` on the presenting view controller causes
+                // the bottom sheet and any presented view controller by
+                // bottom sheet (i.e. Link) to be dismissed all at the same time.
+                presentingViewController.dismiss(animated: true) {
+                    completion(status)
+                }
+            } else {
+                completion(status)
+            }
+            self.completion = nil
+        }
+        self.completion = completion
+
+
         guard presentingViewController.presentedViewController == nil else {
             assertionFailure("presentingViewController is already presenting a view controller")
+            let error = WalletModeError.unknown(
+                debugDescription: "presentingViewController is already presenting a view controller"
+            )
+            completion(.failed(error: error))
             return
         }
         load() { result in
@@ -54,8 +88,8 @@ public class WalletMode {
             case .success(let savedPaymentMethods):
                 self.present(from: presentingViewController, savedPaymentMethods: savedPaymentMethods)
             case .failure(let error):
-                // TODO: Figure out how we present errors
-                print("error: \(error)")
+                //TODO: Update error type
+                completion(.failed(error: error))
                 return
             }
         }
@@ -72,6 +106,8 @@ public class WalletMode {
                                                             delegate: self)
         self.bottomSheetViewController.contentStack = [walletViewController]
     }
+    // MARK: - Internal Properties
+    var completion: ((WalletModeResult) -> Void)?
 
 
 }
@@ -109,6 +145,17 @@ extension WalletMode {
 }
 
 extension WalletMode: WalletModeViewControllerDelegate {
+    func walletModeViewControllerDidFinish(_ walletModeViewController: WalletModeViewController, result: WalletModeResult) {
+        walletModeViewController.dismiss(animated: true) {
+            self.completion?(result)
+        }
+    }
+
+    func walletModeViewControllerDidCancel(_ walletModeViewController: WalletModeViewController) {
+        walletModeViewController.dismiss(animated: true) {
+            self.completion?(.completed)
+        }
+    }
 
 }
 

@@ -312,7 +312,7 @@ extension WalletModeViewController: SavedPaymentOptionsViewControllerDelegate {
                     initAddPaymentMethodViewController(intent: intent)
                     self.updateUI()
                 } else {
-                    self.configuration.createSetupIntentHandler?({ result in
+                    self.configuration.createSetupIntentHandler({ result in
                         guard let clientSecret = result else {
                             //error -- we couldn't get a setup intent
                             return

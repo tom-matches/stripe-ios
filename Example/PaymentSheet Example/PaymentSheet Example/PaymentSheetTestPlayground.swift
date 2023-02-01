@@ -509,24 +509,13 @@ extension PaymentSheetTestPlayground {
     func presentWalletMode() {
         let customerId = "cus_N9wbH9MKEuDikP"
         let backend = WalletModeBackend(customerId: customerId)
-/*
-        let create = { completionBlock in
-            backend.createSetupIntent(completion: completionBlock)
-        }
-        let customerConfig = WalletModeConfiguration.CustomerConfiguration(id: customerId, ephemeralKeySecret: "123")
-
-        let walletModeConfiguration = WalletModeConfiguration(customer: customerConfig, createSetupIntent: create)
-        let walletMode = WalletMode(configuration: walletModeConfiguration)
-        walletMode.present(from: self)
-*/
 
         backend.loadBackendCustomerEphemeralKey { customerEphemeralKey in
             guard let ephemeralKeySecret = customerEphemeralKey else {
                 return
             }
             let customerConfig = WalletMode.CustomerConfiguration(id: customerId,
-                                                                               ephemeralKeySecret: ephemeralKeySecret)
-
+                                                                  ephemeralKeySecret: ephemeralKeySecret)
             let walletModeConfiguration = WalletMode.Configuration(
                 customer: customerConfig,
                 createSetupIntentHandler: { completionBlock in
@@ -535,7 +524,12 @@ extension PaymentSheetTestPlayground {
             let walletMode = WalletMode(configuration: walletModeConfiguration)
             DispatchQueue.main.async {
                 walletMode.present(from: self) { result in
-                    print("result:\(result)")
+                    switch(result) {
+                    case .completed:
+                        break;
+                    case .failed(let error):
+                        print("error: \(error)")
+                    }
                 }
             }
         }

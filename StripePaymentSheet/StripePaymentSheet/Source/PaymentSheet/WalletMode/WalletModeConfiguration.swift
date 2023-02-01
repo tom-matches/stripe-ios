@@ -111,13 +111,13 @@ extension WalletMode {
         public var customer: CustomerConfiguration
 
         /// Handler for creating a setup intent
-        public var createSetupIntentHandler: CreateSetupIntentHandlerCallback?
+        public var createSetupIntentHandler: CreateSetupIntentHandlerCallback
 
         /// The APIClient instance used to make requests to Stripe
         public var apiClient: STPAPIClient = STPAPIClient.shared
 
         public init (customer: CustomerConfiguration,
-                     createSetupIntentHandler: CreateSetupIntentHandlerCallback?) {
+                     createSetupIntentHandler: @escaping CreateSetupIntentHandlerCallback) {
             self.customer = customer
             self.createSetupIntentHandler = createSetupIntentHandler
         }

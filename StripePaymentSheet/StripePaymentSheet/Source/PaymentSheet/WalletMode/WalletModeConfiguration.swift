@@ -8,6 +8,7 @@ import Foundation
 import UIKit
 
 public typealias CreateSetupIntentHandlerCallback = ((@escaping (String?) -> Void) -> Void)
+public typealias WalletModeErrorCallback = (WalletModeError) -> Void
 
 extension WalletMode {
 
@@ -113,13 +114,17 @@ extension WalletMode {
         /// Handler for creating a setup intent
         public var createSetupIntentHandler: CreateSetupIntentHandlerCallback
 
+        public var didErrorCallback: WalletModeErrorCallback?
+
         /// The APIClient instance used to make requests to Stripe
         public var apiClient: STPAPIClient = STPAPIClient.shared
 
         public init (customer: CustomerConfiguration,
-                     createSetupIntentHandler: @escaping CreateSetupIntentHandlerCallback) {
+                     createSetupIntentHandler: @escaping CreateSetupIntentHandlerCallback,
+                     didErrorCallback: WalletModeErrorCallback? = nil) {
             self.customer = customer
             self.createSetupIntentHandler = createSetupIntentHandler
+            self.didErrorCallback = didErrorCallback
         }
     }
 }

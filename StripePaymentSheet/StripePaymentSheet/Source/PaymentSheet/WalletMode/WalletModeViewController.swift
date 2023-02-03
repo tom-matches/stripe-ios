@@ -12,7 +12,6 @@ import Foundation
 import UIKit
 
 protocol WalletModeViewControllerDelegate: AnyObject {
-    func walletModeViewControllerDidFinish(_ walletModeViewController: WalletModeViewController, result: WalletModeResult)
     func walletModeViewControllerDidCancel(_ walletModeViewController: WalletModeViewController)
 }
 
@@ -195,21 +194,13 @@ class WalletModeViewController: UIViewController {
 
     }
 
-    func initAddPaymentMethodViewController(intent: Intent) {
-        self.addPaymentMethodViewController = WalletModeAddPaymentMethodViewController(
-            intent: intent,
-            configuration: self.configuration,
-            delegate: self
-        )
-    }
-    func fetchSetupIntent(clientSecret: String, completion: @escaping ((Intent?) -> Void) ) {
+    func fetchSetupIntent(clientSecret: String, completion: @escaping ((Result<STPSetupIntent, Error>) -> Void) ) {
         configuration.apiClient.retrieveSetupIntentWithPreferences(withClientSecret: clientSecret) { result in
             switch result {
             case .success(let setupIntent):
-                completion(.setupIntent(setupIntent))
-            case .failure:
-                //TODO ... update errors etc.
-                completion(nil)
+                completion(.success(setupIntent))
+            case .failure(let error):
+                completion(.failure(error))
             }
 
         }
@@ -255,7 +246,9 @@ extension WalletModeViewController: BottomSheetContentViewController {
     }
 
     func didTapOrSwipeToDismiss() {
-        // TODO
+        if isDismissable {
+            delegate?.walletModeViewControllerDidCancel(self)
+        }
     }
 
     var requiresFullScreen: Bool {
@@ -308,29 +301,37 @@ extension WalletModeViewController: SavedPaymentOptionsViewControllerDelegate {
                 error = nil  // Clear any errors
                 if let intent = self.intent,
                    !intent.isInTerminalState {
-                    // TODO: check to make sure intent isn't final
                     initAddPaymentMethodViewController(intent: intent)
                     self.updateUI()
                 } else {
                     self.configuration.createSetupIntentHandler({ result in
                         guard let clientSecret = result else {
-                            //error -- we couldn't get a setup intent
+                            self.configuration.didErrorCallback?(.setupIntentClientSecretInvalid)
                             return
                         }
-                        self.fetchSetupIntent(clientSecret: clientSecret) { intent in
-                            guard let intent = intent else {
-                                // error, dude.
-                                self.updateUI()
-                                return
+                        self.fetchSetupIntent(clientSecret: clientSecret) { result in
+                            switch(result) {
+                            case .success(let stpSetupIntent):
+                                let setupIntent = Intent.setupIntent(stpSetupIntent)
+                                self.intent = setupIntent
+                                self.initAddPaymentMethodViewController(intent: setupIntent)
+
+                            case .failure(let error):
+                                self.configuration.didErrorCallback?(WalletModeError.setupIntentFetchError(error))
                             }
-                            self.intent = intent
-                            self.initAddPaymentMethodViewController(intent: intent)
                             self.updateUI()
                         }
                     })
                 }
             }
         }
+    private func initAddPaymentMethodViewController(intent: Intent) {
+        self.addPaymentMethodViewController = WalletModeAddPaymentMethodViewController(
+            intent: intent,
+            configuration: self.configuration,
+            delegate: self
+        )
+    }
     func didSelectRemove(
         viewController: SavedPaymentOptionsViewController,
         paymentMethodSelection: SavedPaymentOptionsViewController.Selection) {

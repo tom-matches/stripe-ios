@@ -516,25 +516,30 @@ extension PaymentSheetTestPlayground {
             }
             let customerConfig = WalletMode.CustomerConfiguration(id: customerId,
                                                                   ephemeralKeySecret: ephemeralKeySecret)
+            let walletModeErrorCallback: WalletModeErrorCallback = { error in
+                switch(error) {
+                case .setupIntentClientSecretInvalid:
+                    print("Intent invalid...")
+                case .errorFetchingSavedPaymentMethods(let error):
+                    print("saved payment methods errored:\(error)")
+                case .setupIntentFetchError(let error):
+                    print("fetching si errored: \(error)")
+                default:
+                    print("something went wrong: \(error)")
+                }
+
+            }
             let walletModeConfiguration = WalletMode.Configuration(
                 customer: customerConfig,
                 createSetupIntentHandler: { completionBlock in
                     backend.createSetupIntent(completion: completionBlock)
-                })
+                },
+                didErrorCallback: walletModeErrorCallback)
             let walletMode = WalletMode(configuration: walletModeConfiguration)
             DispatchQueue.main.async {
-                walletMode.present(from: self) { result in
-                    switch(result) {
-                    case .completed:
-                        break;
-                    case .failed(let error):
-                        print("error: \(error)")
-                    }
-                }
+                walletMode.present(from: self)
             }
         }
-
-
     }
 }
 
@@ -706,7 +711,7 @@ class WalletModeBackend {
         }
         task.resume()
     }
-    func createSetupIntent( completion: @escaping (String?) -> Void) {
+    func createSetupIntent(completion: @escaping (String?) -> Void) {
         let body = [ "customer_id": self.customerId,
         ] as [String: Any]
         let url = URL(string: "https://pool-seen-sandal.glitch.me/create_setup_intent")!
@@ -727,7 +732,6 @@ class WalletModeBackend {
                 return
             }
             guard let secret = json["client_secret"] as? String else {
-                print("failed")
                 completion(nil)
                 return
             }

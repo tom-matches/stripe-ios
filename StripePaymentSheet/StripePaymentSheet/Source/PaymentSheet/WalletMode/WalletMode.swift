@@ -63,7 +63,7 @@ public class WalletMode {
             let error = WalletModeError.unknown(
                 debugDescription: "presentingViewController is already presenting a view controller"
             )
-            configuration.didErrorCallback?(error)
+            configuration.errorCallback?(error)
             return
         }
         load() { result in
@@ -71,7 +71,7 @@ public class WalletMode {
             case .success(let savedPaymentMethods):
                 self.present(from: presentingViewController, savedPaymentMethods: savedPaymentMethods)
             case .failure(let error):
-                self.configuration.didErrorCallback?(.errorFetchingSavedPaymentMethods(error))
+                self.configuration.errorCallback?(.errorFetchingSavedPaymentMethods(error))
                 return
             }
         }

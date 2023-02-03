@@ -306,7 +306,7 @@ extension WalletModeViewController: SavedPaymentOptionsViewControllerDelegate {
                 } else {
                     self.configuration.createSetupIntentHandler({ result in
                         guard let clientSecret = result else {
-                            self.configuration.didErrorCallback?(.setupIntentClientSecretInvalid)
+                            self.configuration.errorCallback?(.setupIntentClientSecretInvalid)
                             return
                         }
                         self.fetchSetupIntent(clientSecret: clientSecret) { result in
@@ -317,7 +317,7 @@ extension WalletModeViewController: SavedPaymentOptionsViewControllerDelegate {
                                 self.initAddPaymentMethodViewController(intent: setupIntent)
 
                             case .failure(let error):
-                                self.configuration.didErrorCallback?(WalletModeError.setupIntentFetchError(error))
+                                self.configuration.errorCallback?(.setupIntentFetchError(error))
                             }
                             self.updateUI()
                         }

@@ -534,7 +534,7 @@ extension PaymentSheetTestPlayground {
                 createSetupIntentHandler: { completionBlock in
                     backend.createSetupIntent(completion: completionBlock)
                 },
-                didErrorCallback: walletModeErrorCallback)
+                errorCallback: walletModeErrorCallback)
             let walletMode = WalletMode(configuration: walletModeConfiguration)
             DispatchQueue.main.async {
                 walletMode.present(from: self)

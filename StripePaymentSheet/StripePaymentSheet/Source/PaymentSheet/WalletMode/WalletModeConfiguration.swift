@@ -8,7 +8,8 @@ import Foundation
 import UIKit
 
 public typealias CreateSetupIntentHandlerCallback = ((@escaping (String?) -> Void) -> Void)
-public typealias WalletModeErrorCallback = (WalletModeError) -> Void
+//public typealias WalletModeErrorCallback = (WalletModeError) -> Void
+//public typealias SelectedPaymentMethodCallback = (PaymentMethodSelection?) -> Void
 
 extension WalletMode {
 
@@ -105,26 +106,44 @@ extension WalletMode {
         /// Wallet Mode pre-populates fields with the values provided.
         public var defaultBillingDetails: BillingDetails = BillingDetails()
 
-        /// Describes the appearance of PaymentSheet
+        /// Describes the appearance of WalletMode
         public var appearance = PaymentSheet.Appearance.default
 
         /// Configuration related to the Stripe Customer
         public var customer: CustomerConfiguration
 
+        /// Configuration for setting the text for the header
+        public var selectingSavedCustomHeaderText: String?
+
         /// Handler for creating a setup intent
         public var createSetupIntentHandler: CreateSetupIntentHandlerCallback
 
-        public var errorCallback: WalletModeErrorCallback?
+
+        public weak var delegate: WalletModeDelegate?
 
         /// The APIClient instance used to make requests to Stripe
         public var apiClient: STPAPIClient = STPAPIClient.shared
 
         public init (customer: CustomerConfiguration,
                      createSetupIntentHandler: @escaping CreateSetupIntentHandlerCallback,
-                     errorCallback: WalletModeErrorCallback? = nil) {
+                     delegate: WalletModeDelegate? = nil) {
             self.customer = customer
             self.createSetupIntentHandler = createSetupIntentHandler
-            self.errorCallback = errorCallback
+            self.delegate = delegate
         }
+    }
+}
+
+
+extension WalletMode {
+    public struct PaymentOptionSelection {
+
+        public struct PaymentOptionDisplayData {
+            public let image: UIImage
+            public let label: String
+        }
+
+        public let paymentMethodId: String
+        public let displayData: PaymentOptionDisplayData
     }
 }

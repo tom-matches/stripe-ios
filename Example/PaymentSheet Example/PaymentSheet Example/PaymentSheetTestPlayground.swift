@@ -447,7 +447,7 @@ extension PaymentSheetTestPlayground {
             "mode": intentMode.rawValue,
             "automatic_payment_methods": automaticPaymentMethodsSelector.selectedSegmentIndex == 0,
             "use_link": linkSelector.selectedSegmentIndex == 0,
-//            "set_shipping_address": true // Uncomment to make server vend PI with shipping address populated
+            //            "set_shipping_address": true // Uncomment to make server vend PI with shipping address populated
         ] as [String: Any]
         let json = try! JSONSerialization.data(withJSONObject: body, options: [])
         var urlRequest = URLRequest(url: url)
@@ -516,33 +516,47 @@ extension PaymentSheetTestPlayground {
             }
             let customerConfig = WalletMode.CustomerConfiguration(id: customerId,
                                                                   ephemeralKeySecret: ephemeralKeySecret)
-            let walletModeErrorCallback: WalletModeErrorCallback = { error in
-                switch(error) {
-                case .setupIntentClientSecretInvalid:
-                    print("Intent invalid...")
-                case .errorFetchingSavedPaymentMethods(let error):
-                    print("saved payment methods errored:\(error)")
-                case .setupIntentFetchError(let error):
-                    print("fetching si errored: \(error)")
-                default:
-                    print("something went wrong: \(error)")
-                }
 
-            }
-            let walletModeConfiguration = WalletMode.Configuration(
+            var configuration = WalletMode.Configuration(
                 customer: customerConfig,
                 createSetupIntentHandler: { completionBlock in
                     backend.createSetupIntent(completion: completionBlock)
                 },
-                errorCallback: walletModeErrorCallback)
-            let walletMode = WalletMode(configuration: walletModeConfiguration)
+                delegate: self)
+            configuration.selectingSavedCustomHeaderText = "Update your payment method"
+            let walletMode = WalletMode(configuration: configuration)
             DispatchQueue.main.async {
                 walletMode.present(from: self)
             }
         }
     }
 }
+extension PaymentSheetTestPlayground: WalletModeDelegate {
+    func didError(_ error: WalletModeError) {
+        switch(error) {
+        case .setupIntentClientSecretInvalid:
+            print("Intent invalid...")
+        case .errorFetchingSavedPaymentMethods(let error):
+            print("saved payment methods errored:\(error)")
+        case .setupIntentFetchError(let error):
+            print("fetching si errored: \(error)")
+        default:
+            print("something went wrong: \(error)")
+        }
+    }
+    func didCancelWith(paymentOptionSelection: WalletMode.PaymentOptionSelection?) {
+        print("cancel with: \(paymentOptionSelection?.paymentMethodId)")
+        print("\(paymentOptionSelection?.displayData.label)")
+        print("\(paymentOptionSelection?.displayData.image)")
+    }
+    func didFinishWith(paymentOptionSelection: WalletMode.PaymentOptionSelection) {
+        print("finish with: \(paymentOptionSelection.paymentMethodId)")
+        print("\(paymentOptionSelection.displayData.label)")
+        print("\(paymentOptionSelection.displayData.image)")
 
+    }
+
+}
 struct PaymentSheetPlaygroundSettings: Codable {
     static let nsUserDefaultsKey = "playgroundSettings"
     let modeSelectorValue: Int

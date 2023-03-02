@@ -13,6 +13,7 @@ import UIKit
 
 protocol WalletModeViewControllerDelegate: AnyObject {
     func walletModeViewControllerDidCancel(_ walletModeViewController: WalletModeViewController)
+    func walletModeViewControllerDidFinish(_ walletModeViewController: WalletModeViewController)
 }
 
 @objc(STP_Internal_WalletModeViewController)
@@ -63,11 +64,20 @@ class WalletModeViewController: UIViewController {
         return DynamicHeightContainerView()
     }()
     private lazy var actionButton: ConfirmButton = {
-//        let callToAction: ConfirmButton.CallToActionType = {
-//            if let customCtaLabel = configuration.primaryButtonLabel {
-//                return .customWithLock(title: customCtaLabel)
-//            }
-//
+        let callToAction: ConfirmButton.CallToActionType = {
+            switch (mode) {
+            case .selectingSaved:
+//                if let confirm = configuration.primaryButtonLabel {
+                    return .custom(title: STPLocalizedString(
+                        "Confirm",
+                        "A button used to confirm selecting a saved payment method"
+                    ))
+  //              }
+            case .addingNew:
+                return .setup
+            }
+        }()
+
 //            switch intent {
 //            case .paymentIntent(let paymentIntent):
 //                return .pay(amount: paymentIntent.amount, currency: paymentIntent.currency)
@@ -77,7 +87,7 @@ class WalletModeViewController: UIViewController {
 //        }()
 
         let button = ConfirmButton(
-            callToAction: .setup,
+            callToAction: callToAction,
             applePayButtonType: .plain,
             appearance: configuration.appearance,
             didTap: { [weak self] in
@@ -86,6 +96,10 @@ class WalletModeViewController: UIViewController {
         )
         return button
     }()
+    private lazy var headerLabel: UILabel = {
+        return PaymentSheetUI.makeHeaderLabel(appearance: configuration.appearance)
+    }()
+
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
@@ -109,17 +123,20 @@ class WalletModeViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         let stackView = UIStackView(arrangedSubviews: [
-            //headerLabel,
+            headerLabel,
            //walletHeader,
             paymentContainerView,
-            actionButton
-            //errorLabel, buyButton, bottomNoticeTextField
+            actionButton,
+            //errorLabel,
+            //, bottomNoticeTextField
         ])
         stackView.directionalLayoutMargins = PaymentSheetUI.defaultMargins
         stackView.isLayoutMarginsRelativeArrangement = true
         stackView.spacing = PaymentSheetUI.defaultPadding
         stackView.axis = .vertical
+        stackView.bringSubviewToFront(headerLabel)
         stackView.setCustomSpacing(32, after: paymentContainerView)
+        stackView.setCustomSpacing(0, after: actionButton)
 
         paymentContainerView.directionalLayoutMargins = .insets(
             leading: -PaymentSheetUI.defaultSheetMargins.leading,
@@ -148,10 +165,21 @@ class WalletModeViewController: UIViewController {
         configureNavBar()
 
         switch(mode) {
-        case .addingNew:
-            actionButton.isHidden = false
         case .selectingSaved:
             actionButton.isHidden = true
+            if let text = configuration.selectingSavedCustomHeaderText, !text.isEmpty {
+                headerLabel.text = text
+            } else {
+                headerLabel.text = STPLocalizedString(
+                    "Select your payment method",
+                    "Title shown above a carousel containing the customer's payment methods")
+            }
+        case .addingNew:
+            actionButton.isHidden = false
+            headerLabel.text = STPLocalizedString(
+                "Add your payment information",
+                "Title shown above a form where the customer can enter payment information like credit card details, email, billing address, etc."
+            )
         }
 
         guard let contentViewController = contentViewControllerFor(mode: mode) else {
@@ -247,6 +275,11 @@ extension WalletModeViewController: BottomSheetContentViewController {
 
     func didTapOrSwipeToDismiss() {
         if isDismissable {
+            if case .saved(let paymentOption) = self.savedPaymentOptionsViewController.selectedPaymentOption {
+                self.configuration.delegate?.didCancelWith(paymentOptionSelection: paymentOption.toPaymentOptionSelection())
+            } else {
+                self.configuration.delegate?.didCancelWith(paymentOptionSelection: nil)
+            }
             delegate?.walletModeViewControllerDidCancel(self)
         }
     }
@@ -260,7 +293,13 @@ extension WalletModeViewController: BottomSheetContentViewController {
 /// :nodoc:
 extension WalletModeViewController: SheetNavigationBarDelegate {
     func sheetNavigationBarDidClose(_ sheetNavigationBar: SheetNavigationBar) {
+        if case .saved(let paymentOption) = self.savedPaymentOptionsViewController.selectedPaymentOption {
+            self.configuration.delegate?.didCancelWith(paymentOptionSelection: paymentOption.toPaymentOptionSelection())
+        } else {
+            self.configuration.delegate?.didCancelWith(paymentOptionSelection: nil)
+        }
         delegate?.walletModeViewControllerDidCancel(self)
+
         if savedPaymentOptionsViewController.isRemovingPaymentMethods {
             savedPaymentOptionsViewController.isRemovingPaymentMethods = false
             configureEditSavedPaymentMethodsButton()
@@ -306,7 +345,7 @@ extension WalletModeViewController: SavedPaymentOptionsViewControllerDelegate {
                 } else {
                     self.configuration.createSetupIntentHandler({ result in
                         guard let clientSecret = result else {
-                            self.configuration.errorCallback?(.setupIntentClientSecretInvalid)
+                            self.configuration.delegate?.didError(.setupIntentClientSecretInvalid)
                             return
                         }
                         self.fetchSetupIntent(clientSecret: clientSecret) { result in
@@ -317,12 +356,19 @@ extension WalletModeViewController: SavedPaymentOptionsViewControllerDelegate {
                                 self.initAddPaymentMethodViewController(intent: setupIntent)
 
                             case .failure(let error):
-                                self.configuration.errorCallback?(.setupIntentFetchError(error))
+                                self.configuration.delegate?.didError(.setupIntentFetchError(error))
                             }
                             self.updateUI()
                         }
                     })
                 }
+            } else if case .saved(let paymentMethod) = paymentMethodSelection {
+                let displayData = WalletMode.PaymentOptionSelection.PaymentOptionDisplayData(image: paymentMethod.makeIcon(),
+                                                                                             label: paymentMethod.paymentSheetLabel)
+                let paymentOptionSelection = WalletMode.PaymentOptionSelection(paymentMethodId: paymentMethod.stripeId,
+                                                                               displayData: displayData)
+                self.configuration.delegate?.didFinishWith(paymentOptionSelection: paymentOptionSelection)
+                self.delegate?.walletModeViewControllerDidFinish(self)
             }
         }
     private func initAddPaymentMethodViewController(intent: Intent) {
@@ -337,4 +383,14 @@ extension WalletModeViewController: SavedPaymentOptionsViewControllerDelegate {
         paymentMethodSelection: SavedPaymentOptionsViewController.Selection) {
             //todo
         }
+}
+
+
+extension STPPaymentMethod {
+    func toPaymentOptionSelection() -> WalletMode.PaymentOptionSelection {
+        let displayData = WalletMode.PaymentOptionSelection.PaymentOptionDisplayData(image: self.makeIcon(),
+                                                                                     label: self.paymentSheetLabel)
+        return WalletMode.PaymentOptionSelection(paymentMethodId: self.stripeId,
+                                                 displayData: displayData)
+    }
 }

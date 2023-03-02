@@ -63,7 +63,7 @@ public class WalletMode {
             let error = WalletModeError.unknown(
                 debugDescription: "presentingViewController is already presenting a view controller"
             )
-            configuration.errorCallback?(error)
+            configuration.delegate?.didError(error)
             return
         }
         load() { result in
@@ -71,7 +71,7 @@ public class WalletMode {
             case .success(let savedPaymentMethods):
                 self.present(from: presentingViewController, savedPaymentMethods: savedPaymentMethods)
             case .failure(let error):
-                self.configuration.errorCallback?(.errorFetchingSavedPaymentMethods(error))
+                self.configuration.delegate?.didError(.errorFetchingSavedPaymentMethods(error))
                 return
             }
         }
@@ -120,6 +120,12 @@ extension WalletMode {
 
 extension WalletMode: WalletModeViewControllerDelegate {
     func walletModeViewControllerDidCancel(_ walletModeViewController: WalletModeViewController) {
+        walletModeViewController.dismiss(animated: true) {
+            self.completion?()
+        }
+    }
+
+    func walletModeViewControllerDidFinish(_ walletModeViewController: WalletModeViewController) {
         walletModeViewController.dismiss(animated: true) {
             self.completion?()
         }

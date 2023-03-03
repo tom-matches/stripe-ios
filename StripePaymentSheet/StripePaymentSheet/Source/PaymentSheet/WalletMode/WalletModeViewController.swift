@@ -36,7 +36,18 @@ class WalletModeViewController: UIViewController {
     private var intent: Intent?
     private var addPaymentMethodViewController: WalletModeAddPaymentMethodViewController?
 
-
+    var selectedPaymentOption: PaymentOption? {
+        switch mode {
+        case .addingNew:
+            if let paymentOption = addPaymentMethodViewController?.paymentOption {
+                return paymentOption
+            }
+            return nil
+        case .selectingSaved:
+            return savedPaymentOptionsViewController.selectedPaymentOption
+        }
+    }
+    
     // MARK: - Views
     internal lazy var navigationBar: SheetNavigationBar = {
         let navBar = SheetNavigationBar(isTestMode: configuration.apiClient.isTestmode,
@@ -53,8 +64,7 @@ class WalletModeViewController: UIViewController {
                 customerID: configuration.customer.id,
                 showApplePay: showApplePay,
                 showLink: false,
-                //Changed to just default first
-                autoSelectDefaultBehavior: .none
+                autoSelectDefaultBehavior: savedPaymentMethods.isEmpty ? .none : .onlyIfMatched
             ),
             appearance: configuration.appearance,
             delegate: self

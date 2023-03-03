@@ -344,9 +344,6 @@ class PaymentSheetTestPlayground: UIViewController {
         }
     }
 
-    @IBAction func didtapWalletMode(_ sender: Any) {
-        presentWalletMode()
-    }
     @objc
     func didTapSelectPaymentMethodButton() {
         paymentSheetFlowController?.presentPaymentOptions(from: self) {
@@ -506,32 +503,6 @@ extension PaymentSheetTestPlayground {
         }
         task.resume()
     }
-
-    func presentWalletMode() {
-        /*
-        let customerId = "cus_N9wbH9MKEuDikP"
-        let backend = WalletModeBackend(customerId: customerId)
-
-        backend.loadBackendCustomerEphemeralKey { customerEphemeralKey in
-            guard let ephemeralKeySecret = customerEphemeralKey else {
-                return
-            }
-            let customerConfig = WalletMode.CustomerConfiguration(id: customerId,
-                                                                  ephemeralKeySecret: ephemeralKeySecret)
-
-            var configuration = WalletMode.Configuration(
-                customer: customerConfig,
-                createSetupIntentHandler: { completionBlock in
-                    backend.createSetupIntent(completion: completionBlock)
-                },
-                delegate: self)
-            configuration.selectingSavedCustomHeaderText = "Update your payment method"
-            let walletMode = WalletMode(configuration: configuration)
-            DispatchQueue.main.async {
-                walletMode.present(from: self)
-            }
-        }*/
-    }
 }
 extension PaymentSheetTestPlayground: WalletModeDelegate {
     func didError(_ error: WalletModeError) {
@@ -689,71 +660,3 @@ extension AddressViewController.AddressDetails {
         return [name, formatter.string(from: postalAddress), phone].compactMap { $0 }.joined(separator: "\n")
     }
 }
-
-/*
-class WalletModeBackend {
-    let customerId: String
-
-    public init(customerId: String) {
-        self.customerId = customerId
-    }
-
-    func loadBackendCustomerEphemeralKey(completion: @escaping (String?) -> Void) {
-        let body = [ "customer_id": self.customerId
-        ] as [String: Any]
-        let url = URL(string: "https://pool-seen-sandal.glitch.me/create_customer_ephemeral_key")!
-        let session = URLSession.shared
-
-        let json = try! JSONSerialization.data(withJSONObject: body, options: [])
-        var urlRequest = URLRequest(url: url)
-        urlRequest.httpMethod = "POST"
-        urlRequest.httpBody = json
-        urlRequest.setValue("application/json", forHTTPHeaderField: "Content-type")
-        let task = session.dataTask(with: urlRequest) { data, response, error in
-            guard
-                error == nil,
-                let data = data,
-                let json = try? JSONSerialization.jsonObject(with: data, options: []) as? [String: Any] else {
-                print(error as Any)
-                completion(nil)
-                return
-            }
-            guard let secret = json["secret"] as? String else {
-                print("failed")
-                completion(nil)
-                return
-            }
-            completion(secret)
-        }
-        task.resume()
-    }
-    func createSetupIntent(completion: @escaping (String?) -> Void) {
-        let body = [ "customer_id": self.customerId,
-        ] as [String: Any]
-        let url = URL(string: "https://pool-seen-sandal.glitch.me/create_setup_intent")!
-        let session = URLSession.shared
-
-        let json = try! JSONSerialization.data(withJSONObject: body, options: [])
-        var urlRequest = URLRequest(url: url)
-        urlRequest.httpMethod = "POST"
-        urlRequest.httpBody = json
-        urlRequest.setValue("application/json", forHTTPHeaderField: "Content-type")
-        let task = session.dataTask(with: urlRequest) { data, response, error in
-            guard
-                error == nil,
-                let data = data,
-                let json = try? JSONSerialization.jsonObject(with: data, options: []) as? [String: Any] else {
-                print(error as Any)
-                completion(nil)
-                return
-            }
-            guard let secret = json["client_secret"] as? String else {
-                completion(nil)
-                return
-            }
-            completion(secret)
-        }
-        task.resume()
-    }
-}
-*/

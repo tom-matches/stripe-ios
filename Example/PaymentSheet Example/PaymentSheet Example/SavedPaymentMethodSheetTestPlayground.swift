@@ -26,15 +26,13 @@ class SavedPaymentMethodSheetTestPlayground: UIViewController {
     @IBOutlet weak var shippingInfoSelector: UISegmentedControl!
     @IBOutlet weak var defaultBillingAddressSelector: UISegmentedControl!
     @IBOutlet weak var loadButton: UIButton!
-
     @IBOutlet weak var selectingSavedCustomHeaderTextField: UITextField!
-    // Inline
+
     @IBOutlet weak var selectPaymentMethodImage: UIImageView!
     @IBOutlet weak var selectPaymentMethodButton: UIButton!
     @IBOutlet weak var shippingAddressButton: UIButton!
-   // @IBOutlet weak var checkoutInlineButton: UIButton!
-    // Complete
-    //@IBOutlet weak var checkoutButton: UIButton!
+
+    var walletMode: WalletMode?
 
     enum CustomerMode: String, CaseIterable {
         case new
@@ -89,6 +87,7 @@ class SavedPaymentMethodSheetTestPlayground: UIViewController {
 
         configuration.customer = customerConfiguration
         configuration.appearance = appearance
+        configuration.delegate = self
 
         if shouldSetDefaultBillingAddress {
             configuration.defaultBillingDetails.name = "Jane Doe"
@@ -140,7 +139,7 @@ class SavedPaymentMethodSheetTestPlayground: UIViewController {
     var ephemeralKey: String?
     var customerID: String?
     var savedPaymentMethodEndpoint: String = defaultSavedPaymentMethodEndpoint
-    var paymentSheetFlowController: PaymentSheet.FlowController?
+    var walletModeFlowController: WalletMode.FlowController?
     var addressViewController: AddressViewController?
     var appearance = PaymentSheet.Appearance.default
 
@@ -182,62 +181,9 @@ class SavedPaymentMethodSheetTestPlayground: UIViewController {
             loadBackend()
         }
     }
-/*
-    @objc
-    func didTapCheckoutInlineButton() {
-        checkoutInlineButton.isEnabled = false
-        paymentSheetFlowController?.confirm(from: self) { result in
-            let alertController = self.makeAlertController()
-            switch result {
-            case .canceled:
-                alertController.message = "canceled"
-                self.checkoutInlineButton.isEnabled = true
-            case .failed(let error):
-                alertController.message = "\(error)"
-                self.present(alertController, animated: true)
-                self.checkoutInlineButton.isEnabled = true
-            case .completed:
-                alertController.message = "Success!"
-                self.present(alertController, animated: true)
-            }
-        }
-    }*/
-    /*
-
-    @objc
-    func didTapCheckoutButton() {
-        let mc: PaymentSheet
-        switch intentMode {
-        case .payment, .paymentWithSetup:
-            mc = PaymentSheet(paymentIntentClientSecret: clientSecret!, configuration: configuration)
-        case .setup:
-            mc = PaymentSheet(setupIntentClientSecret: clientSecret!, configuration: configuration)
-        }
-        mc.present(from: self) { result in
-            let alertController = self.makeAlertController()
-            switch result {
-            case .canceled:
-                print("Canceled! \(String(describing: mc.mostRecentError))")
-            case .failed(let error):
-                alertController.message = error.localizedDescription
-                print(error)
-                self.present(alertController, animated: true)
-            case .completed:
-                alertController.message = "Success!"
-                self.present(alertController, animated: true)
-                self.checkoutButton.isEnabled = false
-            }
-        }
-    }*/
-
-    @IBAction func didtapWalletMode(_ sender: Any) {
-        presentWalletMode()
-    }
     @objc
     func didTapSelectPaymentMethodButton() {
-        paymentSheetFlowController?.presentPaymentOptions(from: self) {
-            self.updateButtons()
-        }
+        walletMode?.present(from: self)
     }
 
     @objc
@@ -255,16 +201,14 @@ class SavedPaymentMethodSheetTestPlayground: UIViewController {
         }
 
         // Update the payment method selection button
-        if let paymentOption = paymentSheetFlowController?.paymentOption {
-            self.selectPaymentMethodButton.setTitle(paymentOption.label, for: .normal)
+        if let paymentOption = walletModeFlowController?.paymentOption {
+            self.selectPaymentMethodButton.setTitle(paymentOption.displayData.label, for: .normal)
             self.selectPaymentMethodButton.setTitleColor(.label, for: .normal)
-            self.selectPaymentMethodImage.image = paymentOption.image
-//            self.checkoutInlineButton.isEnabled = true
+            self.selectPaymentMethodImage.image = paymentOption.displayData.image
         } else {
             self.selectPaymentMethodButton.setTitle("Select", for: .normal)
             self.selectPaymentMethodButton.setTitleColor(.systemBlue, for: .normal)
             self.selectPaymentMethodImage.image = nil
-//            self.checkoutInlineButton.isEnabled = false
         }
         self.selectPaymentMethodButton.setNeedsLayout()
     }
@@ -310,7 +254,7 @@ extension SavedPaymentMethodSheetTestPlayground {
 //        checkoutInlineButton.isEnabled = false
         selectPaymentMethodButton.isEnabled = false
         shippingAddressButton.isEnabled = false
-        paymentSheetFlowController = nil
+        walletModeFlowController = nil
         addressViewController = nil
 
         let customerType = customerMode == .new ? "new" : "returning"
@@ -324,35 +268,29 @@ extension SavedPaymentMethodSheetTestPlayground {
             self.ephemeralKey = json["customerEphemeralKeySecret"]
             self.customerID = json["customerId"]
             StripeAPI.defaultPublishableKey = json["publishableKey"]
+
             DispatchQueue.main.async {
+                guard let configuration = self.configuration else {
+                    print("Failed to generate configuration")
+                    return
+                }
+                self.walletMode = WalletMode(configuration: configuration)
+
                 self.addressViewController = AddressViewController(configuration: self.addressConfiguration!, delegate: self)
-                //self.checkoutButton.isEnabled = true
-//                self.checkoutInlineButton.isEnabled = true
                 self.selectPaymentMethodButton.isEnabled = true
                 self.shippingAddressButton.isEnabled = true
+
+                self.walletMode?.load{ result in
+                    switch(result) {
+                    case .success(let flowController):
+                        self.walletModeFlowController = flowController
+                        self.updateButtons()
+                    case .failure(let error):
+                        print("Error: \(error)")
+                    }
+                }
             }
         }
-    }
-    func presentWalletMode() {
-        guard let ephemeralKey = ephemeralKey,
-              let customerID = customerID else {
-            return
-        }
-        let customerConfig = WalletMode.CustomerConfiguration(id: customerID,
-                                                              ephemeralKeySecret: ephemeralKey)
-        var configuration = WalletMode.Configuration(
-            customer: customerConfig,
-            createSetupIntentHandler: { completionBlock in
-                self.backend.createSetupIntent(completion: completionBlock)
-            },
-            delegate: self)
-
-        configuration.selectingSavedCustomHeaderText = "Update your payment method"
-        let walletMode = WalletMode(configuration: configuration)
-        DispatchQueue.main.async {
-            walletMode.present(from: self)
-        }
-
     }
 }
 
@@ -370,15 +308,16 @@ extension SavedPaymentMethodSheetTestPlayground: WalletModeDelegate {
         }
     }
     func didCancelWith(paymentOptionSelection: WalletMode.PaymentOptionSelection?) {
-        print("cancel with: \(paymentOptionSelection?.paymentMethodId)")
-        print("\(paymentOptionSelection?.displayData.label)")
-        print("\(paymentOptionSelection?.displayData.image)")
+//        print("didCancelWith: \(paymentOptionSelection?.paymentMethodId)")
+//        print("\(paymentOptionSelection?.displayData.label)")
+//        print("\(paymentOptionSelection?.displayData.image)")
+        updateButtons()
     }
     func didFinishWith(paymentOptionSelection: WalletMode.PaymentOptionSelection) {
-        print("finish with: \(paymentOptionSelection.paymentMethodId)")
-        print("\(paymentOptionSelection.displayData.label)")
-        print("\(paymentOptionSelection.displayData.image)")
-
+//        print("finish with: \(paymentOptionSelection.paymentMethodId)")
+//        print("\(paymentOptionSelection.displayData.label)")
+//        print("\(paymentOptionSelection.displayData.image)")
+        updateButtons()
     }
 
 }

@@ -66,7 +66,7 @@ public class WalletMode {
             configuration.delegate?.didError(error)
             return
         }
-        load() { result in
+        loadPaymentMethods() { result in
             switch(result) {
             case .success(let savedPaymentMethods):
                 self.present(from: presentingViewController, savedPaymentMethods: savedPaymentMethods)
@@ -77,9 +77,29 @@ public class WalletMode {
         }
         presentingViewController.presentAsBottomSheet(bottomSheetViewController,
                                                       appearance: configuration.appearance)
-
     }
 
+    @available(iOSApplicationExtension, unavailable)
+    @available(macCatalystApplicationExtension, unavailable)
+    public func load(completion: @escaping (Result<WalletMode.FlowController, Error>) -> Void
+    ) {
+        loadPaymentMethods() { result in
+            switch(result) {
+            case .success(let savedPaymentMethods):
+                let flowController = FlowController(savedPaymentMethods: savedPaymentMethods,
+                                                    configuration: self.configuration)
+
+                if let paymentOption = flowController.paymentOption {
+                    _ = paymentOption.displayData.image
+                }
+
+                completion(.success(flowController))
+            case .failure(let error):
+                self.configuration.delegate?.didError(.errorFetchingSavedPaymentMethods(error))
+            }
+
+        }
+    }
     @available(iOSApplicationExtension, unavailable)
     @available(macCatalystApplicationExtension, unavailable)
     func present(from presentingViewController: UIViewController,
@@ -94,7 +114,7 @@ public class WalletMode {
 }
 
 extension WalletMode {
-    func load(completion: @escaping (Result<[STPPaymentMethod], WalletModeError>) -> Void) {
+    func loadPaymentMethods(completion: @escaping (Result<[STPPaymentMethod], WalletModeError>) -> Void) {
         let savedPaymentMethodTypes: [STPPaymentMethodType] = [.card]
         let customerId = configuration.customer.id
         let ephemeralKey = configuration.customer.ephemeralKeySecret
@@ -131,7 +151,6 @@ extension WalletMode: WalletModeViewControllerDelegate {
         }
     }
 }
-
 
 extension WalletMode: LoadingViewControllerDelegate {
     func shouldDismiss(_ loadingViewController: LoadingViewController) {

@@ -54,7 +54,7 @@ class WalletModeViewController: UIViewController {
                 showApplePay: showApplePay,
                 showLink: false,
                 //Changed to just default first
-                autoSelectDefaultBehavior: .defaultFirst
+                autoSelectDefaultBehavior: .none
             ),
             appearance: configuration.appearance,
             delegate: self

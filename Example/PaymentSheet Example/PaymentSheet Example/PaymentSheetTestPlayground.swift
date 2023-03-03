@@ -506,7 +506,9 @@ extension PaymentSheetTestPlayground {
         }
         task.resume()
     }
+
     func presentWalletMode() {
+        /*
         let customerId = "cus_N9wbH9MKEuDikP"
         let backend = WalletModeBackend(customerId: customerId)
 
@@ -528,7 +530,7 @@ extension PaymentSheetTestPlayground {
             DispatchQueue.main.async {
                 walletMode.present(from: self)
             }
-        }
+        }*/
     }
 }
 extension PaymentSheetTestPlayground: WalletModeDelegate {
@@ -688,7 +690,7 @@ extension AddressViewController.AddressDetails {
     }
 }
 
-
+/*
 class WalletModeBackend {
     let customerId: String
 
@@ -754,3 +756,4 @@ class WalletModeBackend {
         task.resume()
     }
 }
+*/

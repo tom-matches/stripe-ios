@@ -33,6 +33,7 @@ class SavedPaymentMethodSheetTestPlayground: UIViewController {
     @IBOutlet weak var shippingAddressButton: UIButton!
 
     var walletMode: WalletMode?
+    var paymentOptionSelection: WalletMode.PaymentOptionSelection?
 
     enum CustomerMode: String, CaseIterable {
         case new
@@ -59,7 +60,7 @@ class SavedPaymentMethodSheetTestPlayground: UIViewController {
     }
 
     var customerConfiguration: WalletMode.CustomerConfiguration? {
-        if let customerID = customerID,
+        if let customerID = customerId,
            let ephemeralKey = ephemeralKey {
             return WalletMode.CustomerConfiguration(
                 id: customerID, ephemeralKeySecret: ephemeralKey)
@@ -77,12 +78,14 @@ class SavedPaymentMethodSheetTestPlayground: UIViewController {
     var backend: WalletModeBackend!
 
     var configuration: WalletMode.Configuration? {
-        guard let customerConfiguration = customerConfiguration else {
+        guard let customerConfiguration = customerConfiguration,
+              let customerId = self.customerId else {
             return nil
         }
         var configuration = WalletMode.Configuration(customer: customerConfiguration,
                                                      createSetupIntentHandler: { completionBlock in
-            self.backend.createSetupIntent(completion: completionBlock)
+            self.backend.createSetupIntent(customerId: customerId,
+                                           completion: completionBlock)
         })
 
         configuration.customer = customerConfiguration
@@ -137,9 +140,9 @@ class SavedPaymentMethodSheetTestPlayground: UIViewController {
     var addressDetails: AddressViewController.AddressDetails?
 
     var ephemeralKey: String?
-    var customerID: String?
+    var customerId: String?
     var savedPaymentMethodEndpoint: String = defaultSavedPaymentMethodEndpoint
-    var walletModeFlowController: WalletMode.FlowController?
+//    var walletModeFlowController: WalletMode.FlowController?
     var addressViewController: AddressViewController?
     var appearance = PaymentSheet.Appearance.default
 
@@ -201,7 +204,7 @@ class SavedPaymentMethodSheetTestPlayground: UIViewController {
         }
 
         // Update the payment method selection button
-        if let paymentOption = walletModeFlowController?.paymentOption {
+        if let paymentOption = self.paymentOptionSelection {
             self.selectPaymentMethodButton.setTitle(paymentOption.displayData.label, for: .normal)
             self.selectPaymentMethodButton.setTitleColor(.label, for: .normal)
             self.selectPaymentMethodImage.image = paymentOption.displayData.image
@@ -214,6 +217,7 @@ class SavedPaymentMethodSheetTestPlayground: UIViewController {
     }
 
     @IBAction func didTapEndpointConfiguration(_ sender: Any) {
+        // Stubbed out for now
 //        let endpointSelector = EndpointSelectorViewController(delegate: self,
 //                                                              endpointSelectorEndpoint: Self.endpointSelectorEndpoint,
 //                                                              currentCheckoutEndpoint: sav)
@@ -250,23 +254,22 @@ extension SavedPaymentMethodSheetTestPlayground {
         loadBackend()
     }
     func loadBackend() {
-        //checkoutButton.isEnabled = false
-//        checkoutInlineButton.isEnabled = false
         selectPaymentMethodButton.isEnabled = false
         shippingAddressButton.isEnabled = false
-        walletModeFlowController = nil
+        walletMode = nil
+        paymentOptionSelection = nil
         addressViewController = nil
 
         let customerType = customerMode == .new ? "new" : "returning"
-        self.backend = WalletModeBackend(endpoint: savedPaymentMethodEndpoint,
-                                         customerType: customerType)
-        self.backend.loadBackendCustomerEphemeralKey { result in
+        self.backend = WalletModeBackend(endpoint: savedPaymentMethodEndpoint)
+
+        self.backend.loadBackendCustomerEphemeralKey(customerType: customerType) { result in
             guard let json = result else {
                 print("failed to fetch backend")
                 return
             }
             self.ephemeralKey = json["customerEphemeralKeySecret"]
-            self.customerID = json["customerId"]
+            self.customerId = json["customerId"]
             StripeAPI.defaultPublishableKey = json["publishableKey"]
 
             DispatchQueue.main.async {
@@ -280,15 +283,7 @@ extension SavedPaymentMethodSheetTestPlayground {
                 self.selectPaymentMethodButton.isEnabled = true
                 self.shippingAddressButton.isEnabled = true
 
-                self.walletMode?.load{ result in
-                    switch(result) {
-                    case .success(let flowController):
-                        self.walletModeFlowController = flowController
-                        self.updateButtons()
-                    case .failure(let error):
-                        print("Error: \(error)")
-                    }
-                }
+                self.walletMode?.load()
             }
         }
     }
@@ -308,15 +303,15 @@ extension SavedPaymentMethodSheetTestPlayground: WalletModeDelegate {
         }
     }
     func didCancelWith(paymentOptionSelection: WalletMode.PaymentOptionSelection?) {
-//        print("didCancelWith: \(paymentOptionSelection?.paymentMethodId)")
-//        print("\(paymentOptionSelection?.displayData.label)")
-//        print("\(paymentOptionSelection?.displayData.image)")
+        self.paymentOptionSelection = paymentOptionSelection
         updateButtons()
     }
     func didFinishWith(paymentOptionSelection: WalletMode.PaymentOptionSelection) {
-//        print("finish with: \(paymentOptionSelection.paymentMethodId)")
-//        print("\(paymentOptionSelection.displayData.label)")
-//        print("\(paymentOptionSelection.displayData.image)")
+        self.paymentOptionSelection = paymentOptionSelection
+        updateButtons()
+    }
+    func didLoadWith(paymentOptionSelection: WalletMode.PaymentOptionSelection?) {
+        self.paymentOptionSelection = paymentOptionSelection
         updateButtons()
     }
 
@@ -407,20 +402,14 @@ extension SavedPaymentMethodSheetTestPlayground {
 
 class WalletModeBackend {
 
-    let customerType: String
     let endpoint: String
-
-    var customerId: String?
-    var customerEphemeralKey: String?
-    public init(endpoint: String,
-                customerType: String) {
-        self.customerType = customerType
+    public init(endpoint: String) {
         self.endpoint = endpoint
     }
 
-    func loadBackendCustomerEphemeralKey(completion: @escaping ([String:String]?) -> Void) {
+    func loadBackendCustomerEphemeralKey(customerType: String, completion: @escaping ([String:String]?) -> Void) {
 
-        let body = [ "customer_type": self.customerType
+        let body = [ "customer_type": customerType
         ] as [String: Any]
 
         let url = URL(string: "\(endpoint)/saved_payment_method")!
@@ -444,10 +433,11 @@ class WalletModeBackend {
         }
         task.resume()
     }
-    func createSetupIntent(completion: @escaping (String?) -> Void) {
-        let body = [ "customer_id": self.customerId,
+
+    func createSetupIntent(customerId: String, completion: @escaping (String?) -> Void) {
+        let body = [ "customer_id": customerId,
         ] as [String: Any]
-        let url = URL(string: "https://pool-seen-sandal.glitch.me/create_setup_intent")!
+        let url = URL(string: "\(endpoint)/create_setup_intent")!
         let session = URLSession.shared
 
         let json = try! JSONSerialization.data(withJSONObject: body, options: [])

@@ -8,8 +8,6 @@ import Foundation
 import UIKit
 
 public typealias CreateSetupIntentHandlerCallback = ((@escaping (String?) -> Void) -> Void)
-//public typealias WalletModeErrorCallback = (WalletModeError) -> Void
-//public typealias SelectedPaymentMethodCallback = (PaymentMethodSelection?) -> Void
 
 extension WalletMode {
 

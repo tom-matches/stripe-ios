@@ -15,6 +15,7 @@ class WalletModeFormFactory {
     let paymentMethod: PaymentSheet.PaymentMethodType
     let intent: Intent
     let configuration: WalletMode.Configuration
+    let addressSpecProvider: AddressSpecProvider
 
     var theme: ElementsUITheme {
         return configuration.appearance.asElementsTheme
@@ -23,11 +24,13 @@ class WalletModeFormFactory {
     init(
         intent: Intent,
         configuration: WalletMode.Configuration,
+        addressSpecProvider: AddressSpecProvider = .shared,
         paymentMethod: PaymentSheet.PaymentMethodType
     ) {
         self.intent = intent
         self.configuration = configuration
         self.paymentMethod = paymentMethod
+        self.addressSpecProvider = addressSpecProvider
     }
 
     func make() -> PaymentMethodElement {
@@ -79,11 +82,11 @@ class WalletModeFormFactory {
             displayBillingSameAsShippingCheckbox = false
             defaultAddress = configuration.defaultBillingDetails.address.addressSectionDefaults
         }
+
         let section = AddressSectionElement(
             title: String.Localized.billing_address_lowercase,
             countries: countries,
-            //major hack
-            addressSpecProvider: .shared,//addressSpecProvider,
+            addressSpecProvider: addressSpecProvider,
             defaults: defaultAddress,
             collectionMode: collectionMode,
             additionalFields: .init(

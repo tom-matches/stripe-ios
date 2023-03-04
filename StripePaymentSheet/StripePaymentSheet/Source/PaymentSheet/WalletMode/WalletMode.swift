@@ -10,9 +10,12 @@ import UIKit
 @_spi(STP) import StripeCore
 @_spi(STP) import StripePayments
 @_spi(STP) import StripePaymentsUI
+@_spi(STP) import StripeUICore
 
 public class WalletMode {
     let configuration: WalletMode.Configuration
+
+    private var walletModeViewController: WalletModeViewController?
 
     lazy var bottomSheetViewController: BottomSheetViewController = {
         let isTestMode = configuration.apiClient.isTestmode
@@ -81,33 +84,52 @@ public class WalletMode {
 
     @available(iOSApplicationExtension, unavailable)
     @available(macCatalystApplicationExtension, unavailable)
-    public func load(completion: @escaping (Result<WalletMode.FlowController, Error>) -> Void
-    ) {
-        loadPaymentMethods() { result in
-            switch(result) {
-            case .success(let savedPaymentMethods):
-                let flowController = FlowController(savedPaymentMethods: savedPaymentMethods,
-                                                    configuration: self.configuration)
+    public func load() {
+        let loadSpecsPromise = Promise<Void>()
 
-                if let paymentOption = flowController.paymentOption {
-                    _ = paymentOption.displayData.image
+        AddressSpecProvider.shared.loadAddressSpecs {
+            loadSpecsPromise.resolve(with: ())
+        }
+        loadPaymentMethods() { loadResult in
+            loadSpecsPromise.observe { _ in
+                switch(loadResult) {
+                case .success(let savedPaymentMethods):
+                    let flowController = FlowController(savedPaymentMethods: savedPaymentMethods,
+                                                        configuration: self.configuration)
+
+                    if let paymentOption = flowController.paymentOption {
+                        _ = paymentOption.displayData.image
+                        let paymentOptionSelection = PaymentOptionSelection(paymentMethodId: paymentOption.paymentMethodId,
+                                                                            displayData: PaymentOptionSelection.PaymentOptionDisplayData(image: paymentOption.displayData.image,
+                                                                                                                                         label: paymentOption.displayData.label))
+                        self.configuration.delegate?.didLoadWith(paymentOptionSelection: paymentOptionSelection)
+                    } else {
+                        self.configuration.delegate?.didLoadWith(paymentOptionSelection: nil)
+                    }
+                case .failure(let error):
+                    self.configuration.delegate?.didError(.errorFetchingSavedPaymentMethods(error))
                 }
-
-                completion(.success(flowController))
-            case .failure(let error):
-                self.configuration.delegate?.didError(.errorFetchingSavedPaymentMethods(error))
             }
-
         }
     }
+
     @available(iOSApplicationExtension, unavailable)
     @available(macCatalystApplicationExtension, unavailable)
     func present(from presentingViewController: UIViewController,
                  savedPaymentMethods: [STPPaymentMethod]) {
-        let walletViewController = WalletModeViewController(savedPaymentMethods: savedPaymentMethods,
-                                                            configuration: self.configuration,
-                                                            delegate: self)
-        self.bottomSheetViewController.contentStack = [walletViewController]
+        let loadSpecsPromise = Promise<Void>()
+
+        AddressSpecProvider.shared.loadAddressSpecs {
+            loadSpecsPromise.resolve(with: ())
+        }
+        loadSpecsPromise.observe { _ in
+            DispatchQueue.main.async {
+                let walletViewController = WalletModeViewController(savedPaymentMethods: savedPaymentMethods,
+                                                                    configuration: self.configuration,
+                                                                    delegate: self)
+                self.bottomSheetViewController.contentStack = [walletViewController]
+            }
+        }
     }
     // MARK: - Internal Properties
     var completion: (() -> Void)?

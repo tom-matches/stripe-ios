@@ -504,32 +504,7 @@ extension PaymentSheetTestPlayground {
         task.resume()
     }
 }
-extension PaymentSheetTestPlayground: WalletModeDelegate {
-    func didError(_ error: WalletModeError) {
-        switch(error) {
-        case .setupIntentClientSecretInvalid:
-            print("Intent invalid...")
-        case .errorFetchingSavedPaymentMethods(let error):
-            print("saved payment methods errored:\(error)")
-        case .setupIntentFetchError(let error):
-            print("fetching si errored: \(error)")
-        default:
-            print("something went wrong: \(error)")
-        }
-    }
-    func didCancelWith(paymentOptionSelection: WalletMode.PaymentOptionSelection?) {
-        print("cancel with: \(paymentOptionSelection?.paymentMethodId)")
-        print("\(paymentOptionSelection?.displayData.label)")
-        print("\(paymentOptionSelection?.displayData.image)")
-    }
-    func didFinishWith(paymentOptionSelection: WalletMode.PaymentOptionSelection) {
-        print("finish with: \(paymentOptionSelection.paymentMethodId)")
-        print("\(paymentOptionSelection.displayData.label)")
-        print("\(paymentOptionSelection.displayData.image)")
 
-    }
-
-}
 struct PaymentSheetPlaygroundSettings: Codable {
     static let nsUserDefaultsKey = "playgroundSettings"
     let modeSelectorValue: Int

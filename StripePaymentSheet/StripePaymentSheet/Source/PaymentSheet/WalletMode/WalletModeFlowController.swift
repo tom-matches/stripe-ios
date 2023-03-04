@@ -11,7 +11,7 @@ extension WalletMode {
 
     @available(iOSApplicationExtension, unavailable)
     @available(macCatalystApplicationExtension, unavailable)
-    public class FlowController: WalletModeViewControllerDelegate {
+    class FlowController: WalletModeViewControllerDelegate {
         public let configuration: Configuration
         private let savedPaymentMethods: [STPPaymentMethod]
 

@@ -253,7 +253,7 @@ class WalletModeViewController: UIViewController {
 
     }
     private func addPaymentOption(paymentOption: PaymentOption) {
-        print("todo, make calls out to sevice to actually add payment method")
+        print("stubbed out")
     }
 
     // MARK: Helpers

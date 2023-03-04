@@ -59,15 +59,6 @@ class SavedPaymentMethodSheetTestPlayground: UIViewController {
         return defaultBillingAddressSelector.selectedSegmentIndex == 0
     }
 
-    var customerConfiguration: WalletMode.CustomerConfiguration? {
-        if let customerID = customerId,
-           let ephemeralKey = ephemeralKey {
-            return WalletMode.CustomerConfiguration(
-                id: customerID, ephemeralKeySecret: ephemeralKey)
-        }
-        return nil
-    }
-
     var shippingMode: ShippingMode {
         switch shippingInfoSelector.selectedSegmentIndex {
         case 0: return .on
@@ -77,72 +68,11 @@ class SavedPaymentMethodSheetTestPlayground: UIViewController {
     }
     var backend: WalletModeBackend!
 
-    var configuration: WalletMode.Configuration? {
-        guard let customerConfiguration = customerConfiguration,
-              let customerId = self.customerId else {
-            return nil
-        }
-        var configuration = WalletMode.Configuration(customer: customerConfiguration,
-                                                     createSetupIntentHandler: { completionBlock in
-            self.backend.createSetupIntent(customerId: customerId,
-                                           completion: completionBlock)
-        })
-
-        configuration.customer = customerConfiguration
-        configuration.appearance = appearance
-        configuration.delegate = self
-
-        if shouldSetDefaultBillingAddress {
-            configuration.defaultBillingDetails.name = "Jane Doe"
-            configuration.defaultBillingDetails.email = "foo@bar.com"
-            configuration.defaultBillingDetails.phone = "+13105551234"
-            configuration.defaultBillingDetails.address = .init(
-                city: "San Francisco",
-                country: "CA",
-                line1: "510 Townsend St.",
-                postalCode: "94102",
-                state: "California"
-            )
-        }
-        if shippingMode != .off {
-            configuration.shippingDetails = { [weak self] in
-                return self?.addressDetails
-            }
-        }
-        // TODO: Get selectingSavedCustomerHeaderText
-        return configuration
-    }
-
-    var addressConfiguration: AddressViewController.Configuration? {
-        guard let walletModeConfig = configuration else {
-            return nil
-        }
-        var addrConfiguration = AddressViewController.Configuration(additionalFields: .init(phone: .optional),
-                                                                appearance: walletModeConfig.appearance)
-        if case .onWithDefaults = shippingMode {
-            addrConfiguration.defaultValues = .init(
-                address: .init(
-                    city: "San Francisco",
-                    country: "US",
-                    line1: "510 Townsend St.",
-                    postalCode: "94102",
-                    state: "California"
-                ),
-                name: "Jane Doe",
-                phone: "5555555555"
-            )
-            addrConfiguration.allowedCountries = ["US", "CA", "MX", "GB"]
-        }
-        addrConfiguration.additionalFields.checkboxLabel = "Save this address for future orders"
-        return addrConfiguration
-    }
-
     var addressDetails: AddressViewController.AddressDetails?
 
     var ephemeralKey: String?
     var customerId: String?
     var savedPaymentMethodEndpoint: String = defaultSavedPaymentMethodEndpoint
-//    var walletModeFlowController: WalletMode.FlowController?
     var addressViewController: AddressViewController?
     var appearance = PaymentSheet.Appearance.default
 
@@ -159,9 +89,6 @@ class SavedPaymentMethodSheetTestPlayground: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
 
-//        checkoutButton.addTarget(self, action: #selector(didTapCheckoutButton), for: .touchUpInside)
-//        checkoutButton.isEnabled = false
-
         shippingAddressButton.addTarget(self, action: #selector(didTapShippingAddressButton), for: .touchUpInside)
         shippingAddressButton.titleLabel?.adjustsFontSizeToFitWidth = true
         shippingAddressButton.titleLabel?.textAlignment = .right
@@ -172,10 +99,6 @@ class SavedPaymentMethodSheetTestPlayground: UIViewController {
         selectPaymentMethodButton.isEnabled = false
         selectPaymentMethodButton.addTarget(
             self, action: #selector(didTapSelectPaymentMethodButton), for: .touchUpInside)
-
-//        checkoutInlineButton.addTarget(
-//            self, action: #selector(didTapCheckoutInlineButton), for: .touchUpInside)
-//        checkoutInlineButton.isEnabled = false
 
         if let paymentSheetPlaygroundSettings = SavedPaymentMethodSheetTestPlayground.paymentSheetPlaygroundSettings {
             loadSettingsFrom(settings: paymentSheetPlaygroundSettings)
@@ -243,6 +166,61 @@ class SavedPaymentMethodSheetTestPlayground: UIViewController {
             self.present(alert, animated: true, completion: nil)
         }
     }
+
+    func walletModeConfiguration(customerId: String, ephemeralKey: String) -> WalletMode.Configuration {
+        let customerConfiguration = WalletMode.CustomerConfiguration(id: customerId, ephemeralKeySecret: ephemeralKey)
+
+        var configuration = WalletMode.Configuration(customer: customerConfiguration,
+                                                     createSetupIntentHandler: { completionBlock in
+            self.backend.createSetupIntent(customerId: customerId,
+                                           completion: completionBlock)
+        })
+
+        configuration.customer = customerConfiguration
+        configuration.appearance = appearance
+        configuration.delegate = self
+
+        if shouldSetDefaultBillingAddress {
+            configuration.defaultBillingDetails.name = "Jane Doe"
+            configuration.defaultBillingDetails.email = "foo@bar.com"
+            configuration.defaultBillingDetails.phone = "+13105551234"
+            configuration.defaultBillingDetails.address = .init(
+                city: "San Francisco",
+                country: "CA",
+                line1: "510 Townsend St.",
+                postalCode: "94102",
+                state: "California"
+            )
+        }
+        if shippingMode != .off {
+            configuration.shippingDetails = { [weak self] in
+                return self?.addressDetails
+            }
+        }
+        configuration.selectingSavedCustomHeaderText = selectingSavedCustomHeaderTextField.text
+
+        return configuration
+    }
+    func addressConfiguration(walletModeConfiguration: WalletMode.Configuration) -> AddressViewController.Configuration {
+        var addrConfiguration = AddressViewController.Configuration(additionalFields: .init(phone: .optional),
+                                                                appearance: walletModeConfiguration.appearance)
+        if case .onWithDefaults = shippingMode {
+            addrConfiguration.defaultValues = .init(
+                address: .init(
+                    city: "San Francisco",
+                    country: "US",
+                    line1: "510 Townsend St.",
+                    postalCode: "94102",
+                    state: "California"
+                ),
+                name: "Jane Doe",
+                phone: "5555555555"
+            )
+            addrConfiguration.allowedCountries = ["US", "CA", "MX", "GB"]
+        }
+        addrConfiguration.additionalFields.checkboxLabel = "Save this address for future orders"
+        return addrConfiguration
+    }
 }
 
 // MARK: - Backend
@@ -264,22 +242,23 @@ extension SavedPaymentMethodSheetTestPlayground {
         self.backend = WalletModeBackend(endpoint: savedPaymentMethodEndpoint)
 
         self.backend.loadBackendCustomerEphemeralKey(customerType: customerType) { result in
-            guard let json = result else {
-                print("failed to fetch backend")
+            guard let json = result,
+                  let ephemeralKey = json["customerEphemeralKeySecret"], !ephemeralKey.isEmpty,
+                  let customerId = json["customerId"], !customerId.isEmpty,
+                  let publishableKey = json["publishableKey"] else {
                 return
             }
-            self.ephemeralKey = json["customerEphemeralKeySecret"]
-            self.customerId = json["customerId"]
-            StripeAPI.defaultPublishableKey = json["publishableKey"]
+            self.ephemeralKey = ephemeralKey
+            self.customerId = customerId
+            StripeAPI.defaultPublishableKey = publishableKey
 
             DispatchQueue.main.async {
-                guard let configuration = self.configuration else {
-                    print("Failed to generate configuration")
-                    return
-                }
-                self.walletMode = WalletMode(configuration: configuration)
+                let walletModeConfiguration = self.walletModeConfiguration(customerId: customerId, ephemeralKey: ephemeralKey)
+                self.walletMode = WalletMode(configuration: walletModeConfiguration)
 
-                self.addressViewController = AddressViewController(configuration: self.addressConfiguration!, delegate: self)
+                let addressConfiguration = self.addressConfiguration(walletModeConfiguration: walletModeConfiguration)
+                self.addressViewController = AddressViewController(configuration: addressConfiguration, delegate: self)
+
                 self.selectPaymentMethodButton.isEnabled = true
                 self.shippingAddressButton.isEnabled = true
 

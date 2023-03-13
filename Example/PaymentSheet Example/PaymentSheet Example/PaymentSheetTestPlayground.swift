@@ -16,7 +16,7 @@ import SwiftUI
 import UIKit
 
 class PaymentSheetTestPlayground: UIViewController {
-    static let baseEndpoint = "https://stp-mobile-ci-test-backend-v7.stripedemos.com"
+    static let baseEndpoint = "https://slow-electric-saw.glitch.me/"
     static var endpointSelectorEndpoint: String {
         return "\(baseEndpoint)/endpoints"
     }

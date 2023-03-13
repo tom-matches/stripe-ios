@@ -31,6 +31,8 @@ open class STPCustomerContext: NSObject, STPBackendAPIAdapter {
         self.init(keyProvider: keyProvider, apiClient: STPAPIClient.shared)
     }
 
+
+    
     /// Initializes a new `STPCustomerContext` with the specified key provider.
     /// Upon initialization, a CustomerContext will fetch a new ephemeral key from
     /// your backend and use it to prefetch the customer object specified in the key.
@@ -129,6 +131,7 @@ open class STPCustomerContext: NSObject, STPBackendAPIAdapter {
         self.keyManager = keyManager
         self.apiClient = apiClient
         _includeApplePayPaymentMethods = false
+        
         super.init()
         retrieveCustomer(nil)
         listPaymentMethodsForCustomer(completion: nil)
@@ -263,7 +266,7 @@ open class STPCustomerContext: NSObject, STPBackendAPIAdapter {
             }
         })
     }
-
+    
     @objc
     public func attachPaymentMethod(
         toCustomer paymentMethod: STPPaymentMethod,
@@ -353,7 +356,7 @@ open class STPCustomerContext: NSObject, STPBackendAPIAdapter {
         })
     }
 
-    func saveLastSelectedPaymentMethodID(
+    @_spi(STP) public func saveLastSelectedPaymentMethodID(
         forCustomer paymentMethodID: String?,
         completion: STPErrorBlock?
     ) {
@@ -386,7 +389,7 @@ open class STPCustomerContext: NSObject, STPBackendAPIAdapter {
         })
     }
 
-    func retrieveLastSelectedPaymentMethodIDForCustomer(
+    @_spi(STP) public func retrieveLastSelectedPaymentMethodIDForCustomer(
         completion: @escaping (String?, Error?) -> Void
     ) {
         keyManager.getOrCreateKey({ ephemeralKey, retrieveKeyError in
@@ -404,6 +407,17 @@ open class STPCustomerContext: NSObject, STPBackendAPIAdapter {
                 completion(customerToDefaultPaymentMethodID[ephemeralKey.customerID ?? ""], nil)
             })
         })
+    }
+    
+    @objc public func setSelectedPaymentMethodID(
+        paymentMethodId: String, completion: @escaping (Error?) -> Void
+    ) {
+        self.setSelectedPaymentMethodID(paymentMethodId: paymentMethodId, completion: completion)
+    }
+    @objc public func retrieveSelectedPaymentMethodID(
+        completion: @escaping (String?, Error?) -> Void
+    ) {
+        self.retrieveLastSelectedPaymentMethodIDForCustomer(completion: completion)
     }
 }
 

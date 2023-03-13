@@ -6,26 +6,8 @@
 
 import Foundation
 import UIKit
-
-public typealias CreateSetupIntentHandlerCallback = ((@escaping (String?) -> Void) -> Void)
-
+@_spi(STP) import StripePaymentsUI
 extension WalletMode {
-
-    /// Configuration related to the Stripe Customer
-    public struct CustomerConfiguration {
-        /// The identifier of the Stripe Customer object.
-        /// See https://stripe.com/docs/api/customers/object#customer_object-id
-        public let id: String
-
-        /// A short-lived token that allows the SDK to access a Customer's payment methods
-        public let ephemeralKeySecret: String
-
-        /// Initializes a CustomerConfiguration
-        public init(id: String, ephemeralKeySecret: String) {
-            self.id = id
-            self.ephemeralKeySecret = ephemeralKeySecret
-        }
-    }
 
     /// An address.
     public struct Address: Equatable {
@@ -81,6 +63,13 @@ extension WalletMode {
     }
 
     public struct Configuration {
+        public typealias CreateSetupIntentHandlerCallback = ((@escaping (String?) -> Void) -> Void)
+        
+        /// A block that provides a SetupIntent which, when confirmed, will attach a PaymentMethod to the current customer.
+        /// Upon calling this, return a SetupIntent with the current customer set as the `customer`.
+        /// If this is not set, the PaymentMethod will be attached directly to the customer instead.
+        public var createSetupIntentHandler: CreateSetupIntentHandlerCallback?
+        
         private var styleRawValue: Int = 0  // SheetStyle.automatic.rawValue
         /// The color styling to use for PaymentSheet UI
         /// Default value is SheetStyle.automatic
@@ -99,8 +88,7 @@ extension WalletMode {
         /// This is used to display a "Billing address is same as shipping" checkbox if `defaultBillingDetails` is not provided
         /// If `name` and `line1` are populated, it's also [attached to the PaymentIntent](https://stripe.com/docs/api/payment_intents/object#payment_intent_object-shipping) during payment.
         public var shippingDetails: () -> AddressViewController.AddressDetails? = { return nil }
-
-
+        
         /// Wallet Mode pre-populates fields with the values provided.
         public var defaultBillingDetails: BillingDetails = BillingDetails()
 
@@ -108,24 +96,20 @@ extension WalletMode {
         public var appearance = PaymentSheet.Appearance.default
 
         /// Configuration related to the Stripe Customer
-        public var customer: CustomerConfiguration
+        public var customerContext: STPBackendAPIAdapter
 
         /// Configuration for setting the text for the header
         public var selectingSavedCustomHeaderText: String?
-
-        /// Handler for creating a setup intent
-        public var createSetupIntentHandler: CreateSetupIntentHandlerCallback
-
 
         public weak var delegate: WalletModeDelegate?
 
         /// The APIClient instance used to make requests to Stripe
         public var apiClient: STPAPIClient = STPAPIClient.shared
 
-        public init (customer: CustomerConfiguration,
-                     createSetupIntentHandler: @escaping CreateSetupIntentHandlerCallback,
+        public init (customerContext: STPBackendAPIAdapter,
+                     createSetupIntentHandler: CreateSetupIntentHandlerCallback?,
                      delegate: WalletModeDelegate? = nil) {
-            self.customer = customer
+            self.customerContext = customerContext
             self.createSetupIntentHandler = createSetupIntentHandler
             self.delegate = delegate
         }

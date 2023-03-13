@@ -61,7 +61,11 @@ class WalletModeViewController: UIViewController {
         return SavedPaymentOptionsViewController(
             savedPaymentMethods: savedPaymentMethods,
             configuration: .init(
-                customerID: configuration.customer.id,
+//                TODO: Why does the view have the customer ID? What is this used for?
+//                If we use a STPCustomerContext, the user could implement alternative behaviors,
+//                so the VC shouldn't know the Customer ID directly.
+//                customerID: configuration.customer.id,
+                customerID: nil,
                 showApplePay: showApplePay,
                 showLink: false,
                 autoSelectDefaultBehavior: savedPaymentMethods.isEmpty ? .none : .onlyIfMatched
@@ -353,24 +357,35 @@ extension WalletModeViewController: SavedPaymentOptionsViewControllerDelegate {
                     initAddPaymentMethodViewController(intent: intent)
                     self.updateUI()
                 } else {
-                    self.configuration.createSetupIntentHandler({ result in
-                        guard let clientSecret = result else {
-                            self.configuration.delegate?.didError(.setupIntentClientSecretInvalid)
-                            return
-                        }
-                        self.fetchSetupIntent(clientSecret: clientSecret) { result in
-                            switch(result) {
-                            case .success(let stpSetupIntent):
-                                let setupIntent = Intent.setupIntent(stpSetupIntent)
-                                self.intent = setupIntent
-                                self.initAddPaymentMethodViewController(intent: setupIntent)
-
-                            case .failure(let error):
-                                self.configuration.delegate?.didError(.setupIntentFetchError(error))
+                    if let createSetupIntentHandler = self.configuration.createSetupIntentHandler {
+                        createSetupIntentHandler({ result in
+                            guard let clientSecret = result else {
+                                self.configuration.delegate?.didError(.setupIntentClientSecretInvalid)
+                                return
                             }
-                            self.updateUI()
-                        }
-                    })
+                            self.fetchSetupIntent(clientSecret: clientSecret) { result in
+                                switch(result) {
+                                case .success(let stpSetupIntent):
+                                    let setupIntent = Intent.setupIntent(stpSetupIntent)
+                                    self.intent = setupIntent
+                                    self.initAddPaymentMethodViewController(intent: setupIntent)
+
+                                case .failure(let error):
+                                    self.configuration.delegate?.didError(.setupIntentFetchError(error))
+                                }
+                                self.updateUI()
+                            }
+                        })
+                    } else {
+                        // Directly attach the PaymentMethod using the STPCustomerContext or user's API adapter.
+//                        TODO: The PaymentMethod must be available for us to do this. Create a PaymentMethod and attach it here.
+//                        self.configuration.customerContext.attachPaymentMethod(toCustomer: paymentMethod) { error in
+//                            if let error = error {
+//                                // TODO: Error for attaching payment method to customer
+//                                self.configuration.delegate?.didError(.unknown(debugDescription: "Implement this"))
+//                            }
+//                        }
+                    }
                 }
             } else if case .saved(let paymentMethod) = paymentMethodSelection {
                 let displayData = WalletMode.PaymentOptionSelection.PaymentOptionDisplayData(image: paymentMethod.makeIcon(),

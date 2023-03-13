@@ -137,19 +137,16 @@ public class WalletMode {
 
 extension WalletMode {
     func loadPaymentMethods(completion: @escaping (Result<[STPPaymentMethod], WalletModeError>) -> Void) {
-        let savedPaymentMethodTypes: [STPPaymentMethodType] = [.card]
-        let customerId = configuration.customer.id
-        let ephemeralKey = configuration.customer.ephemeralKeySecret
-
-        configuration.apiClient.listPaymentMethods(
-            forCustomer: customerId,
-            using: ephemeralKey,
-            types: savedPaymentMethodTypes
-        ) { paymentMethods, error in
+//        TODO: Implement savedPaymentMethodTypes filtering!
+//        let savedPaymentMethodTypes: [STPPaymentMethodType] = [.card]
+        configuration.customerContext.listPaymentMethodsForCustomer {
+            paymentMethods, error in
             guard let paymentMethods = paymentMethods, error == nil else {
-                let error = error ?? PaymentSheetError.unknown(
-                    debugDescription: "Failed to retrieve PaymentMethods for the customer"
-                )
+                // TODO: Pass errors from the customerContext
+                let error = PaymentSheetError.unknown(debugDescription: "Failed to retrieve PaymentMethods for the customer")
+//                let error = error ?? PaymentSheetError.unknown(
+//                    debugDescription: "Failed to retrieve PaymentMethods for the customer"
+//                )
                 completion(.failure(.errorFetchingSavedPaymentMethods(error)))
                 return
             }
@@ -178,6 +175,20 @@ extension WalletMode: LoadingViewControllerDelegate {
     func shouldDismiss(_ loadingViewController: LoadingViewController) {
         loadingViewController.dismiss(animated: true) {
             self.completion?()
+        }
+    }
+}
+
+
+extension STPCustomerContext {
+    /// Returns the currently selected Payment Option for this customer context.
+    /// You can use this to obtain the selected payment method without loading the WalletMode sheet.
+    public func retrieveSelectedPaymentOption(
+        completion: @escaping (WalletMode.PaymentOptionSelection?, Error?) -> Void
+    ) {
+//        TODO: Implement this!
+        self.retrieveSelectedPaymentMethodID { _, _ in
+            completion(nil, nil)
         }
     }
 }

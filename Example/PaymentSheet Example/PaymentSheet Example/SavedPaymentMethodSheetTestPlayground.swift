@@ -170,7 +170,7 @@ class SavedPaymentMethodSheetTestPlayground: UIViewController {
     func walletModeConfiguration(customerId: String, ephemeralKey: String) -> WalletMode.Configuration {
         let customerConfiguration = WalletMode.CustomerConfiguration(id: customerId, ephemeralKeySecret: ephemeralKey)
 
-        var configuration = WalletMode.Configuration(customer: customerConfiguration,
+        var configuration = WalletMode.Configuration(customerContext: customerConfiguration,
                                                      createSetupIntentHandler: { completionBlock in
             self.backend.createSetupIntent(customerId: customerId,
                                            completion: completionBlock)
@@ -269,6 +269,11 @@ extension SavedPaymentMethodSheetTestPlayground {
 }
 
 extension SavedPaymentMethodSheetTestPlayground: WalletModeDelegate {
+    func didCloseWith(paymentOptionSelection: StripePaymentSheet.WalletMode.PaymentOptionSelection?) {
+        self.paymentOptionSelection = paymentOptionSelection
+        updateButtons()
+    }
+    
     func didError(_ error: WalletModeError) {
         switch(error) {
         case .setupIntentClientSecretInvalid:
@@ -281,19 +286,6 @@ extension SavedPaymentMethodSheetTestPlayground: WalletModeDelegate {
             print("something went wrong: \(error)")
         }
     }
-    func didCancelWith(paymentOptionSelection: WalletMode.PaymentOptionSelection?) {
-        self.paymentOptionSelection = paymentOptionSelection
-        updateButtons()
-    }
-    func didFinishWith(paymentOptionSelection: WalletMode.PaymentOptionSelection) {
-        self.paymentOptionSelection = paymentOptionSelection
-        updateButtons()
-    }
-    func didLoadWith(paymentOptionSelection: WalletMode.PaymentOptionSelection?) {
-        self.paymentOptionSelection = paymentOptionSelection
-        updateButtons()
-    }
-
 }
 
 struct SavedPaymentMethodSheetPlaygroundSettings: Codable {

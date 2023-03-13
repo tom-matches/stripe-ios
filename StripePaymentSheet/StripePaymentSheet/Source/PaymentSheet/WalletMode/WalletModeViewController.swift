@@ -290,9 +290,9 @@ extension WalletModeViewController: BottomSheetContentViewController {
     func didTapOrSwipeToDismiss() {
         if isDismissable {
             if case .saved(let paymentOption) = self.savedPaymentOptionsViewController.selectedPaymentOption {
-                self.configuration.delegate?.didCancelWith(paymentOptionSelection: paymentOption.toPaymentOptionSelection())
+                self.configuration.delegate?.didCloseWith(paymentOptionSelection: paymentOption.toPaymentOptionSelection())
             } else {
-                self.configuration.delegate?.didCancelWith(paymentOptionSelection: nil)
+                self.configuration.delegate?.didCloseWith(paymentOptionSelection: nil)
             }
             delegate?.walletModeViewControllerDidCancel(self)
         }
@@ -308,9 +308,9 @@ extension WalletModeViewController: BottomSheetContentViewController {
 extension WalletModeViewController: SheetNavigationBarDelegate {
     func sheetNavigationBarDidClose(_ sheetNavigationBar: SheetNavigationBar) {
         if case .saved(let paymentOption) = self.savedPaymentOptionsViewController.selectedPaymentOption {
-            self.configuration.delegate?.didCancelWith(paymentOptionSelection: paymentOption.toPaymentOptionSelection())
+            self.configuration.delegate?.didCloseWith(paymentOptionSelection: paymentOption.toPaymentOptionSelection())
         } else {
-            self.configuration.delegate?.didCancelWith(paymentOptionSelection: nil)
+            self.configuration.delegate?.didCloseWith(paymentOptionSelection: nil)
         }
         delegate?.walletModeViewControllerDidCancel(self)
 
@@ -392,7 +392,7 @@ extension WalletModeViewController: SavedPaymentOptionsViewControllerDelegate {
                                                                                              label: paymentMethod.paymentSheetLabel)
                 let paymentOptionSelection = WalletMode.PaymentOptionSelection(paymentMethodId: paymentMethod.stripeId,
                                                                                displayData: displayData)
-                self.configuration.delegate?.didFinishWith(paymentOptionSelection: paymentOptionSelection)
+                self.configuration.delegate?.didCloseWith(paymentOptionSelection: paymentOptionSelection)
                 self.delegate?.walletModeViewControllerDidFinish(self)
             }
         }

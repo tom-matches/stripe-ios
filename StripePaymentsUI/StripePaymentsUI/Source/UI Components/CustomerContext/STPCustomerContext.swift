@@ -9,6 +9,9 @@
 import Foundation
 @_spi(STP) import StripeCore
 
+// TODO(davide): Move all this CustomerContext infrastructure into the PaymentSheet framework, then make Stripe depend on StripePaymentSheet.
+// Stripe.framework will go away after Basic Integration deprecation, so it's okay to temporarily make it depend on StripePaymentSheet.
+
 /// An `STPCustomerContext` retrieves and updates a Stripe customer and their attached
 /// payment methods using an ephemeral key, a short-lived API key scoped to a specific
 /// customer object. If your current user logs out of your app and a new user logs in,
@@ -30,7 +33,6 @@ open class STPCustomerContext: NSObject, STPBackendAPIAdapter {
     ) {
         self.init(keyProvider: keyProvider, apiClient: STPAPIClient.shared)
     }
-
 
     
     /// Initializes a new `STPCustomerContext` with the specified key provider.

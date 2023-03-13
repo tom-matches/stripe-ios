@@ -11,6 +11,7 @@ import Foundation
 import Contacts
 import PassKit
 import StripePaymentSheet
+import StripePaymentsUI
 import SwiftUI
 import UIKit
 
@@ -168,15 +169,13 @@ class SavedPaymentMethodSheetTestPlayground: UIViewController {
     }
 
     func walletModeConfiguration(customerId: String, ephemeralKey: String) -> WalletMode.Configuration {
-        let customerConfiguration = WalletMode.CustomerConfiguration(id: customerId, ephemeralKeySecret: ephemeralKey)
-
-        var configuration = WalletMode.Configuration(customerContext: customerConfiguration,
+        let customerContext = STPCustomerContext.init(customerId: customerId, ephemeralKeySecret: ephemeralKey)
+        var configuration = WalletMode.Configuration(customerContext: customerContext,
                                                      createSetupIntentHandler: { completionBlock in
             self.backend.createSetupIntent(customerId: customerId,
                                            completion: completionBlock)
         })
 
-        configuration.customer = customerConfiguration
         configuration.appearance = appearance
         configuration.delegate = self
 

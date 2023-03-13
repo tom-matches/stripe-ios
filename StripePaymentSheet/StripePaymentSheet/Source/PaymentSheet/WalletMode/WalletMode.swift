@@ -99,12 +99,14 @@ public class WalletMode {
 
                     if let paymentOption = flowController.paymentOption {
                         _ = paymentOption.displayData.image
-                        let paymentOptionSelection = PaymentOptionSelection(paymentMethodId: paymentOption.paymentMethodId,
-                                                                            displayData: PaymentOptionSelection.PaymentOptionDisplayData(image: paymentOption.displayData.image,
-                                                                                                                                         label: paymentOption.displayData.label))
-                        self.configuration.delegate?.didLoadWith(paymentOptionSelection: paymentOptionSelection)
+                        // Do something here to inform the user if needed.
+
+                        //                        let paymentOptionSelection = PaymentOptionSelection(paymentMethodId: paymentOption.paymentMethodId,
+//                                                                            displayData: PaymentOptionSelection.PaymentOptionDisplayData(image: paymentOption.displayData.image,
+//                                                                                                                                         label: paymentOption.displayData.label))
+                        //                        self.configuration.delegate?.didLoadWith(paymentOptionSelection: paymentOptionSelection)
                     } else {
-                        self.configuration.delegate?.didLoadWith(paymentOptionSelection: nil)
+//                        self.configuration.delegate?.didLoadWith(paymentOptionSelection: nil)
                     }
                 case .failure(let error):
                     self.configuration.delegate?.didError(.errorFetchingSavedPaymentMethods(error))

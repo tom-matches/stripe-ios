@@ -898,7 +898,7 @@ extension PaymentSheetUITest {
 
     // MARK: Deferred tests (server-side)
     // TODO(porter) Re-enable SSC tests
-    
+
 //    func testDeferredPaymentIntent_ServerSideConfirmation() {
 //        loadPlayground(
 //            app,

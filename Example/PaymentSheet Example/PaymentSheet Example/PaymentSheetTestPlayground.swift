@@ -705,7 +705,9 @@ extension PaymentSheetTestPlayground {
     func confirmHandlerForServerSideConfirmation(_ paymentMethodID: String,
                                                  _ shouldSavePaymentMethod: Bool,
                                                  _ intentCreationCallback: @escaping (Result<String, Error>) -> Void) {
-        intentCreationCallback(.success(clientSecret!))
+        DispatchQueue.main.asyncAfter(deadline: .now())
+            intentCreationCallback(.success(clientSecret!))
+        }
         //        enum ServerSideConfirmationError: Error {
 //            case clientSecretNotFound
 //            case unknown

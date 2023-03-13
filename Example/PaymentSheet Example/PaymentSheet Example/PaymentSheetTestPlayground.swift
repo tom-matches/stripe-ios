@@ -705,37 +705,38 @@ extension PaymentSheetTestPlayground {
     func confirmHandlerForServerSideConfirmation(_ paymentMethodID: String,
                                                  _ shouldSavePaymentMethod: Bool,
                                                  _ intentCreationCallback: @escaping (Result<String, Error>) -> Void) {
-        enum ServerSideConfirmationError: Error {
-            case clientSecretNotFound
-            case unknown
-        }
-
-        let body = [
-            "client_secret": clientSecret!,
-            "payment_method_id": paymentMethodID,
-            "merchant_country_code": merchantCountryCode.rawValue,
-            "should_save_payment_method": shouldSavePaymentMethod,
-            "mode": intentConfig.mode.requestBody,
-            "return_url": configuration.returnURL ?? "",
-        ] as [String: Any]
-
-        makeRequest(with: PaymentSheetTestPlayground.confirmEndpoint, body: body, completionHandler: { data, _, error in
-            guard
-                error == nil,
-                let data = data,
-                let json = try? JSONSerialization.jsonObject(with: data, options: []) as? [String: Any]
-            else {
-                intentCreationCallback(.failure(error ?? ServerSideConfirmationError.unknown))
-                return
-            }
-
-            guard let clientSecret = json["client_secret"] as? String else {
-                intentCreationCallback(.failure(ServerSideConfirmationError.clientSecretNotFound))
-                return
-            }
-
-            intentCreationCallback(.success(clientSecret))
-        })
+        intentCreationCallback(.success(clientSecret!))
+        //        enum ServerSideConfirmationError: Error {
+//            case clientSecretNotFound
+//            case unknown
+//        }
+//
+//        let body = [
+//            "client_secret": clientSecret!,
+//            "payment_method_id": paymentMethodID,
+//            "merchant_country_code": merchantCountryCode.rawValue,
+//            "should_save_payment_method": shouldSavePaymentMethod,
+//            "mode": intentConfig.mode.requestBody,
+//            "return_url": configuration.returnURL ?? "",
+//        ] as [String: Any]
+//
+//        makeRequest(with: PaymentSheetTestPlayground.confirmEndpoint, body: body, completionHandler: { data, _, error in
+//            guard
+//                error == nil,
+//                let data = data,
+//                let json = try? JSONSerialization.jsonObject(with: data, options: []) as? [String: Any]
+//            else {
+//                intentCreationCallback(.failure(error ?? ServerSideConfirmationError.unknown))
+//                return
+//            }
+//
+//            guard let clientSecret = json["client_secret"] as? String else {
+//                intentCreationCallback(.failure(ServerSideConfirmationError.clientSecretNotFound))
+//                return
+//            }
+//
+//            intentCreationCallback(.success(clientSecret))
+//        })
     }
 }
 

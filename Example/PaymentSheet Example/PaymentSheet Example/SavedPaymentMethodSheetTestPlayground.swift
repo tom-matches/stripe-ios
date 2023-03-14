@@ -25,13 +25,11 @@ class SavedPaymentMethodSheetTestPlayground: UIViewController {
     // Configuration
     @IBOutlet weak var customerModeSelector: UISegmentedControl!
     @IBOutlet weak var shippingInfoSelector: UISegmentedControl!
-    @IBOutlet weak var defaultBillingAddressSelector: UISegmentedControl!
     @IBOutlet weak var loadButton: UIButton!
     @IBOutlet weak var selectingSavedCustomHeaderTextField: UITextField!
 
     @IBOutlet weak var selectPaymentMethodImage: UIImageView!
     @IBOutlet weak var selectPaymentMethodButton: UIButton!
-    @IBOutlet weak var shippingAddressButton: UIButton!
 
     var walletMode: WalletMode?
     var paymentOptionSelection: WalletMode.PaymentOptionSelection?
@@ -56,25 +54,11 @@ class SavedPaymentMethodSheetTestPlayground: UIViewController {
         }
     }
 
-    var shouldSetDefaultBillingAddress: Bool {
-        return defaultBillingAddressSelector.selectedSegmentIndex == 0
-    }
-
-    var shippingMode: ShippingMode {
-        switch shippingInfoSelector.selectedSegmentIndex {
-        case 0: return .on
-        case 1: return .onWithDefaults
-        default: return .off
-        }
-    }
     var backend: WalletModeBackend!
-
-    var addressDetails: AddressViewController.AddressDetails?
 
     var ephemeralKey: String?
     var customerId: String?
     var savedPaymentMethodEndpoint: String = defaultSavedPaymentMethodEndpoint
-    var addressViewController: AddressViewController?
     var appearance = PaymentSheet.Appearance.default
 
     func makeAlertController() -> UIAlertController {
@@ -89,12 +73,6 @@ class SavedPaymentMethodSheetTestPlayground: UIViewController {
 
     override func viewDidLoad() {
         super.viewDidLoad()
-
-        shippingAddressButton.addTarget(self, action: #selector(didTapShippingAddressButton), for: .touchUpInside)
-        shippingAddressButton.titleLabel?.adjustsFontSizeToFitWidth = true
-        shippingAddressButton.titleLabel?.textAlignment = .right
-        shippingAddressButton.isEnabled = false
-
         loadButton.addTarget(self, action: #selector(load), for: .touchUpInside)
 
         selectPaymentMethodButton.isEnabled = false
@@ -113,20 +91,7 @@ class SavedPaymentMethodSheetTestPlayground: UIViewController {
         walletMode?.present(from: self)
     }
 
-    @objc
-    func didTapShippingAddressButton() {
-        present(UINavigationController(rootViewController: addressViewController!), animated: true)
-    }
-
     func updateButtons() {
-        // Update the shipping address
-        if let shippingAddressDetails = addressDetails {
-            let shippingText = shippingAddressDetails.localizedDescription.replacingOccurrences(of: "\n", with: ", ")
-            shippingAddressButton.setTitle(shippingText, for: .normal)
-        } else {
-            shippingAddressButton.setTitle("Add", for: .normal)
-        }
-
         // Update the payment method selection button
         if let paymentOption = self.paymentOptionSelection {
             self.selectPaymentMethodButton.setTitle(paymentOption.displayData.label, for: .normal)
@@ -178,47 +143,9 @@ class SavedPaymentMethodSheetTestPlayground: UIViewController {
 
         configuration.appearance = appearance
         configuration.delegate = self
-
-        if shouldSetDefaultBillingAddress {
-            configuration.defaultBillingDetails.name = "Jane Doe"
-            configuration.defaultBillingDetails.email = "foo@bar.com"
-            configuration.defaultBillingDetails.phone = "+13105551234"
-            configuration.defaultBillingDetails.address = .init(
-                city: "San Francisco",
-                country: "CA",
-                line1: "510 Townsend St.",
-                postalCode: "94102",
-                state: "California"
-            )
-        }
-        if shippingMode != .off {
-            configuration.shippingDetails = { [weak self] in
-                return self?.addressDetails
-            }
-        }
         configuration.selectingSavedCustomHeaderText = selectingSavedCustomHeaderTextField.text
 
         return configuration
-    }
-    func addressConfiguration(walletModeConfiguration: WalletMode.Configuration) -> AddressViewController.Configuration {
-        var addrConfiguration = AddressViewController.Configuration(additionalFields: .init(phone: .optional),
-                                                                appearance: walletModeConfiguration.appearance)
-        if case .onWithDefaults = shippingMode {
-            addrConfiguration.defaultValues = .init(
-                address: .init(
-                    city: "San Francisco",
-                    country: "US",
-                    line1: "510 Townsend St.",
-                    postalCode: "94102",
-                    state: "California"
-                ),
-                name: "Jane Doe",
-                phone: "5555555555"
-            )
-            addrConfiguration.allowedCountries = ["US", "CA", "MX", "GB"]
-        }
-        addrConfiguration.additionalFields.checkboxLabel = "Save this address for future orders"
-        return addrConfiguration
     }
 }
 
@@ -232,10 +159,8 @@ extension SavedPaymentMethodSheetTestPlayground {
     }
     func loadBackend() {
         selectPaymentMethodButton.isEnabled = false
-        shippingAddressButton.isEnabled = false
         walletMode = nil
         paymentOptionSelection = nil
-        addressViewController = nil
 
         let customerType = customerMode == .new ? "new" : "returning"
         self.backend = WalletModeBackend(endpoint: savedPaymentMethodEndpoint)
@@ -255,11 +180,7 @@ extension SavedPaymentMethodSheetTestPlayground {
                 let walletModeConfiguration = self.walletModeConfiguration(customerId: customerId, ephemeralKey: ephemeralKey)
                 self.walletMode = WalletMode(configuration: walletModeConfiguration)
 
-                let addressConfiguration = self.addressConfiguration(walletModeConfiguration: walletModeConfiguration)
-                self.addressViewController = AddressViewController(configuration: addressConfiguration, delegate: self)
-
                 self.selectPaymentMethodButton.isEnabled = true
-                self.shippingAddressButton.isEnabled = true
 
                 self.walletMode?.load()
             }
@@ -292,29 +213,15 @@ struct SavedPaymentMethodSheetPlaygroundSettings: Codable {
 
     let customerModeSelectorValue: Int
 
-    let defaultBillingAddressSelectorValue: Int
-    let shippingInfoSelectorValue: Int
-
     let selectingSavedCustomHeaderText: String?
     let savedPaymentMethodEndpoint: String?
 
     static func defaultValues() -> SavedPaymentMethodSheetPlaygroundSettings {
         return SavedPaymentMethodSheetPlaygroundSettings(
             customerModeSelectorValue: 0,
-            defaultBillingAddressSelectorValue: 1,
-            shippingInfoSelectorValue: 0,
             selectingSavedCustomHeaderText: nil,
             savedPaymentMethodEndpoint: SavedPaymentMethodSheetTestPlayground.defaultSavedPaymentMethodEndpoint
         )
-    }
-}
-
-// MARK: - AddressViewControllerDelegate
-extension SavedPaymentMethodSheetTestPlayground: AddressViewControllerDelegate {
-    func addressViewControllerDidFinish(_ addressViewController: AddressViewController, with address: AddressViewController.AddressDetails?) {
-        addressViewController.dismiss(animated: true)
-        self.addressDetails = address
-        self.updateButtons()
     }
 }
 
@@ -338,8 +245,6 @@ extension SavedPaymentMethodSheetTestPlayground {
     func serializeSettingsToNSUserDefaults() {
         let settings = SavedPaymentMethodSheetPlaygroundSettings(
             customerModeSelectorValue: customerModeSelector.selectedSegmentIndex,
-            defaultBillingAddressSelectorValue: defaultBillingAddressSelector.selectedSegmentIndex,
-            shippingInfoSelectorValue: shippingInfoSelector.selectedSegmentIndex,
             selectingSavedCustomHeaderText: selectingSavedCustomHeaderTextField.text,
             savedPaymentMethodEndpoint: savedPaymentMethodEndpoint
         )
@@ -362,8 +267,6 @@ extension SavedPaymentMethodSheetTestPlayground {
     func loadSettingsFrom(settings: SavedPaymentMethodSheetPlaygroundSettings) {
         customerModeSelector.selectedSegmentIndex = settings.customerModeSelectorValue
 
-        defaultBillingAddressSelector.selectedSegmentIndex = settings.defaultBillingAddressSelectorValue
-        shippingInfoSelector.selectedSegmentIndex = settings.shippingInfoSelectorValue
         selectingSavedCustomHeaderTextField.text = settings.selectingSavedCustomHeaderText
         savedPaymentMethodEndpoint = settings.savedPaymentMethodEndpoint ?? SavedPaymentMethodSheetTestPlayground.defaultSavedPaymentMethodEndpoint
     }

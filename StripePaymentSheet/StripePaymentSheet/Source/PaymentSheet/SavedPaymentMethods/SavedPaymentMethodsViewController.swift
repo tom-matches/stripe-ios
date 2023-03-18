@@ -14,7 +14,7 @@ protocol SavedPaymentMethodsViewControllerDelegate: AnyObject {
     func savedPaymentMethodsViewControllerDidFinish(_ savedPaymentMethodsViewController: SavedPaymentMethodsViewController)
 }
 
-@objc(STP_Internal_WalletModeViewController)
+@objc(STP_Internal_SavedPaymentMethodsViewController)
 class SavedPaymentMethodsViewController: UIViewController {
 
     // MARK: - Read-only Properties

@@ -126,10 +126,9 @@ public class SavedPaymentMethodsSheet {
         }
         loadSpecsPromise.observe { _ in
             DispatchQueue.main.async {
-                let walletViewController = SavedPaymentMethodsViewController(savedPaymentMethods: savedPaymentMethods,
-                                                                             configuration: self.configuration,
-                                                                             delegate: self)
-                self.bottomSheetViewController.contentStack = [walletViewController]
+                self.bottomSheetViewController.contentStack = [SavedPaymentMethodsViewController(savedPaymentMethods: savedPaymentMethods,
+                                                                                                 configuration: self.configuration,
+                                                                                                 delegate: self)]
             }
         }
     }

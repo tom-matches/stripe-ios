@@ -48,7 +48,7 @@ extension SavedPaymentMethodsSheet {
             self.configuration = configuration
         }
 
-        /// MARK - WalletModeViewControllerDelegate
+        /// MARK - SavedPaymentMethodsViewControllerDelegate
         func savedPaymentMethodsViewControllerDidCancel(_ savedPaymentMethodsViewController: SavedPaymentMethodsViewController) {  }
         func savedPaymentMethodsViewControllerDidFinish(_ savedPaymentMethodsViewController: SavedPaymentMethodsViewController) {  }
     }

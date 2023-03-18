@@ -30,7 +30,7 @@ extension SavedPaymentMethodsSheet {
                 styleRawValue = newValue.rawValue
             }
         }
-        /// Describes the appearance of WalletMode
+        /// Describes the appearance of SavdPaymentMethodsSheet
         public var appearance = PaymentSheet.Appearance.default
 
         /// Configuration related to the Stripe Customer

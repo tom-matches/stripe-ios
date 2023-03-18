@@ -54,7 +54,7 @@ class SavedPaymentMethodSheetTestPlayground: UIViewController {
         }
     }
 
-    var backend: WalletModeBackend!
+    var backend: SavedPaymentMethodsBackend!
 
     var ephemeralKey: String?
     var customerId: String?
@@ -163,7 +163,7 @@ extension SavedPaymentMethodSheetTestPlayground {
         paymentOptionSelection = nil
 
         let customerType = customerMode == .new ? "new" : "returning"
-        self.backend = WalletModeBackend(endpoint: savedPaymentMethodEndpoint)
+        self.backend = SavedPaymentMethodsBackend(endpoint: savedPaymentMethodEndpoint)
 
         self.backend.loadBackendCustomerEphemeralKey(customerType: customerType) { result in
             guard let json = result,
@@ -188,7 +188,7 @@ extension SavedPaymentMethodSheetTestPlayground {
     }
 }
 
-extension SavedPaymentMethodSheetTestPlayground: SavedPaymentMethodSheetDelegate {
+extension SavedPaymentMethodSheetTestPlayground: SavedPaymentMethodsSheetDelegate {
     func didCloseWith(paymentOptionSelection: SavedPaymentMethodsSheet.PaymentOptionSelection?) {
         self.paymentOptionSelection = paymentOptionSelection
         updateButtons()
@@ -273,7 +273,7 @@ extension SavedPaymentMethodSheetTestPlayground {
 }
 
 
-class WalletModeBackend {
+class SavedPaymentMethodsBackend {
 
     let endpoint: String
     public init(endpoint: String) {

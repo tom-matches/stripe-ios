@@ -1,5 +1,5 @@
 //
-//  SavedPaymentMethodSheetConfiguration.swift
+//  SavedPaymentMethodsSheetConfiguration.swift
 //  StripePaymentSheet
 //
 
@@ -39,14 +39,14 @@ extension SavedPaymentMethodsSheet {
         /// Configuration for setting the text for the header
         public var selectingSavedCustomHeaderText: String?
 
-        public weak var delegate: SavedPaymentMethodSheetDelegate?
+        public weak var delegate: SavedPaymentMethodsSheetDelegate?
 
         /// The APIClient instance used to make requests to Stripe
         public var apiClient: STPAPIClient = STPAPIClient.shared
 
         public init (customerContext: STPBackendAPIAdapter,
                      createSetupIntentHandler: CreateSetupIntentHandlerCallback?,
-                     delegate: SavedPaymentMethodSheetDelegate? = nil) {
+                     delegate: SavedPaymentMethodsSheetDelegate? = nil) {
             self.customerContext = customerContext
             self.createSetupIntentHandler = createSetupIntentHandler
             self.delegate = delegate

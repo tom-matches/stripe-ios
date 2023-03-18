@@ -1,5 +1,5 @@
 //
-//  SavedPaymentMethodSheetError.swift
+//  SavedPaymentMethodsSheetError.swift
 //  StripePaymentSheet
 //
 

@@ -1,9 +1,9 @@
 //
-//  WalletModeDelegate.swift
+//  SavedPaymentMethodsSheetDelegate.swift
 //  StripePaymentSheet
 //
 
-public protocol WalletModeDelegate: AnyObject {
-    func didCloseWith(paymentOptionSelection: WalletMode.PaymentOptionSelection?)
-    func didError(_ error: WalletModeError)
+public protocol SavedPaymentMethodSheetDelegate: AnyObject {
+    func didCloseWith(paymentOptionSelection: SavedPaymentMethodsSheet.PaymentOptionSelection?)
+    func didError(_ error: SavedPaymentMethodsSheetError)
 }

@@ -1,5 +1,5 @@
 //
-//  WalletModeError.swift
+//  SavedPaymentMethodSheetError.swift
 //  StripePaymentSheet
 //
 
@@ -7,7 +7,7 @@ import Foundation
 @_spi(STP) import StripeCore
 import StripePayments
 
-public enum WalletModeError: Error {
+public enum SavedPaymentMethodsSheetError: Error {
     
     case errorFetchingSavedPaymentMethods(Error)
     

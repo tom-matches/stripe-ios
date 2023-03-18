@@ -1,5 +1,5 @@
 //
-//  WalletModeFlowController.swift
+//  SavedPaymentMethodsSheetFlowController.swift
 //  StripePaymentSheet
 //
 
@@ -7,11 +7,11 @@ import Foundation
 @_spi(STP) import StripeCore
 @_spi(STP) import StripePayments
 
-extension WalletMode {
+extension SavedPaymentMethodsSheet {
 
     @available(iOSApplicationExtension, unavailable)
     @available(macCatalystApplicationExtension, unavailable)
-    class FlowController: WalletModeViewControllerDelegate {
+    class FlowController: SavedPaymentMethodsViewControllerDelegate {
         public let configuration: Configuration
         private let savedPaymentMethods: [STPPaymentMethod]
 
@@ -20,7 +20,7 @@ extension WalletMode {
                 if case .saved(let pm) = selectedPaymentOption {
                     // TODO: We should clean this up similar to how flow controller does it for consistencypm.stripeId
                     return PaymentOptionSelection(paymentMethodId: pm.stripeId,
-                                                  displayData: WalletMode.PaymentOptionSelection.PaymentOptionDisplayData(image: pm.makeIcon(),
+                                                  displayData: SavedPaymentMethodsSheet.PaymentOptionSelection.PaymentOptionDisplayData(image: pm.makeIcon(),
                                                                                                                           label: pm.paymentSheetLabel))
                 }
             }
@@ -34,11 +34,10 @@ extension WalletMode {
             return paymentOptionsViewController.selectedPaymentOption
         }
 
-        private lazy var paymentOptionsViewController: WalletModeViewController = {
-            let walletModeViewController = WalletModeViewController(savedPaymentMethods: savedPaymentMethods,
-                                                                    configuration: configuration,
-                                                                    delegate: self)
-            return walletModeViewController
+        private lazy var paymentOptionsViewController: SavedPaymentMethodsViewController = {
+            return SavedPaymentMethodsViewController(savedPaymentMethods: savedPaymentMethods,
+                                                     configuration: configuration,
+                                                     delegate: self)
         }()
 
         required init(
@@ -50,8 +49,8 @@ extension WalletMode {
         }
 
         /// MARK - WalletModeViewControllerDelegate
-        func walletModeViewControllerDidCancel(_ walletModeViewController: WalletModeViewController) {  }
-        func walletModeViewControllerDidFinish(_ walletModeViewController: WalletModeViewController) {  }
+        func savedPaymentMethodsViewControllerDidCancel(_ savedPaymentMethodsViewController: SavedPaymentMethodsViewController) {  }
+        func savedPaymentMethodsViewControllerDidFinish(_ savedPaymentMethodsViewController: SavedPaymentMethodsViewController) {  }
     }
 
 }

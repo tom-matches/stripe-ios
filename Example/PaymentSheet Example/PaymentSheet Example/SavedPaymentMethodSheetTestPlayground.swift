@@ -31,8 +31,8 @@ class SavedPaymentMethodSheetTestPlayground: UIViewController {
     @IBOutlet weak var selectPaymentMethodImage: UIImageView!
     @IBOutlet weak var selectPaymentMethodButton: UIButton!
 
-    var walletMode: WalletMode?
-    var paymentOptionSelection: WalletMode.PaymentOptionSelection?
+    var savedPaymentMethodsSheet: SavedPaymentMethodsSheet?
+    var paymentOptionSelection: SavedPaymentMethodsSheet.PaymentOptionSelection?
 
     enum CustomerMode: String, CaseIterable {
         case new
@@ -88,7 +88,7 @@ class SavedPaymentMethodSheetTestPlayground: UIViewController {
     }
     @objc
     func didTapSelectPaymentMethodButton() {
-        walletMode?.present(from: self)
+        savedPaymentMethodsSheet?.present(from: self)
     }
 
     func updateButtons() {
@@ -133,10 +133,10 @@ class SavedPaymentMethodSheetTestPlayground: UIViewController {
         }
     }
 
-    func walletModeConfiguration(customerId: String, ephemeralKey: String) -> WalletMode.Configuration {
+    func walletModeConfiguration(customerId: String, ephemeralKey: String) -> SavedPaymentMethodsSheet.Configuration {
         let customerContext = STPCustomerContext.init(customerId: customerId, ephemeralKeySecret: ephemeralKey)
-        var configuration = WalletMode.Configuration(customerContext: customerContext,
-                                                     createSetupIntentHandler: { completionBlock in
+        var configuration = SavedPaymentMethodsSheet.Configuration(customerContext: customerContext,
+                                                                   createSetupIntentHandler: { completionBlock in
             self.backend.createSetupIntent(customerId: customerId,
                                            completion: completionBlock)
         })
@@ -159,7 +159,7 @@ extension SavedPaymentMethodSheetTestPlayground {
     }
     func loadBackend() {
         selectPaymentMethodButton.isEnabled = false
-        walletMode = nil
+        savedPaymentMethodsSheet = nil
         paymentOptionSelection = nil
 
         let customerType = customerMode == .new ? "new" : "returning"
@@ -178,23 +178,23 @@ extension SavedPaymentMethodSheetTestPlayground {
 
             DispatchQueue.main.async {
                 let walletModeConfiguration = self.walletModeConfiguration(customerId: customerId, ephemeralKey: ephemeralKey)
-                self.walletMode = WalletMode(configuration: walletModeConfiguration)
+                self.savedPaymentMethodsSheet = SavedPaymentMethodsSheet(configuration: walletModeConfiguration)
 
                 self.selectPaymentMethodButton.isEnabled = true
 
-                self.walletMode?.load()
+                self.savedPaymentMethodsSheet?.load()
             }
         }
     }
 }
 
-extension SavedPaymentMethodSheetTestPlayground: WalletModeDelegate {
-    func didCloseWith(paymentOptionSelection: StripePaymentSheet.WalletMode.PaymentOptionSelection?) {
+extension SavedPaymentMethodSheetTestPlayground: SavedPaymentMethodSheetDelegate {
+    func didCloseWith(paymentOptionSelection: SavedPaymentMethodsSheet.PaymentOptionSelection?) {
         self.paymentOptionSelection = paymentOptionSelection
         updateButtons()
     }
     
-    func didError(_ error: WalletModeError) {
+    func didError(_ error: SavedPaymentMethodsSheetError) {
         switch(error) {
         case .setupIntentClientSecretInvalid:
             print("Intent invalid...")

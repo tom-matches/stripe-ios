@@ -1,5 +1,5 @@
 //
-//  WalletModeFormFactory.swift
+//  SavedPaymentMethodsFormFactory.swift
 //  StripePaymentSheet
 //
 
@@ -10,11 +10,11 @@
 import SwiftUI
 import UIKit
 
-class WalletModeFormFactory {
+class SavedPaymentMethodsFormFactory {
 
     let paymentMethod: PaymentSheet.PaymentMethodType
     let intent: Intent
-    let configuration: WalletMode.Configuration
+    let configuration: SavedPaymentMethodsSheet.Configuration
     let addressSpecProvider: AddressSpecProvider
 
     var theme: ElementsUITheme {
@@ -23,7 +23,7 @@ class WalletModeFormFactory {
 
     init(
         intent: Intent,
-        configuration: WalletMode.Configuration,
+        configuration: SavedPaymentMethodsSheet.Configuration,
         addressSpecProvider: AddressSpecProvider = .shared,
         paymentMethod: PaymentSheet.PaymentMethodType
     ) {

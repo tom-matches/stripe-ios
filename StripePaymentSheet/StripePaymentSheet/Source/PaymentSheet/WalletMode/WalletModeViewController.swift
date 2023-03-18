@@ -1,8 +1,6 @@
 //
-//  WalletModeViewController.swift
+//  SavedPaymentMethodsViewController.swift
 //  StripePaymentSheet
-//
-//  Created by John Woo on 1/26/23.
 //
 
 import Foundation
@@ -11,20 +9,20 @@ import Foundation
 @_spi(STP) import StripeUICore
 import UIKit
 
-protocol WalletModeViewControllerDelegate: AnyObject {
-    func walletModeViewControllerDidCancel(_ walletModeViewController: WalletModeViewController)
-    func walletModeViewControllerDidFinish(_ walletModeViewController: WalletModeViewController)
+protocol SavedPaymentMethodsViewControllerDelegate: AnyObject {
+    func savedPaymentMethodsViewControllerDidCancel(_ savedPaymentMethodsViewController: SavedPaymentMethodsViewController)
+    func savedPaymentMethodsViewControllerDidFinish(_ savedPaymentMethodsViewController: SavedPaymentMethodsViewController)
 }
 
 @objc(STP_Internal_WalletModeViewController)
-class WalletModeViewController: UIViewController {
+class SavedPaymentMethodsViewController: UIViewController {
 
     // MARK: - Read-only Properties
     let savedPaymentMethods: [STPPaymentMethod]
-    let configuration: WalletMode.Configuration
+    let configuration: SavedPaymentMethodsSheet.Configuration
 
     // MARK: - Writable Properties
-    weak var delegate: WalletModeViewControllerDelegate?
+    weak var delegate: SavedPaymentMethodsViewControllerDelegate?
     private(set) var isDismissable: Bool = true
     enum Mode {
         case selectingSaved
@@ -34,7 +32,7 @@ class WalletModeViewController: UIViewController {
     private var mode: Mode
     private(set) var error: Error?
     private var intent: Intent?
-    private var addPaymentMethodViewController: WalletModeAddPaymentMethodViewController?
+    private var addPaymentMethodViewController: SavedPaymentMethodsAddPaymentMethodViewController?
 
     var selectedPaymentOption: PaymentOption? {
         switch mode {
@@ -120,10 +118,10 @@ class WalletModeViewController: UIViewController {
 
     required init(
         savedPaymentMethods: [STPPaymentMethod],
-        configuration: WalletMode.Configuration,
+        configuration: SavedPaymentMethodsSheet.Configuration,
 // TODO
 //        isApplePayEnabled: Bool,
-        delegate: WalletModeViewControllerDelegate
+        delegate: SavedPaymentMethodsViewControllerDelegate
     ) {
         self.savedPaymentMethods = savedPaymentMethods
         self.configuration = configuration
@@ -282,7 +280,7 @@ class WalletModeViewController: UIViewController {
     }
 }
 
-extension WalletModeViewController: BottomSheetContentViewController {
+extension SavedPaymentMethodsViewController: BottomSheetContentViewController {
     var allowsDragToDismiss: Bool {
         return isDismissable
     }
@@ -294,7 +292,7 @@ extension WalletModeViewController: BottomSheetContentViewController {
             } else {
                 self.configuration.delegate?.didCloseWith(paymentOptionSelection: nil)
             }
-            delegate?.walletModeViewControllerDidCancel(self)
+            delegate?.savedPaymentMethodsViewControllerDidCancel(self)
         }
     }
 
@@ -305,14 +303,14 @@ extension WalletModeViewController: BottomSheetContentViewController {
 
 // MARK: - SheetNavigationBarDelegate
 /// :nodoc:
-extension WalletModeViewController: SheetNavigationBarDelegate {
+extension SavedPaymentMethodsViewController: SheetNavigationBarDelegate {
     func sheetNavigationBarDidClose(_ sheetNavigationBar: SheetNavigationBar) {
         if case .saved(let paymentOption) = self.savedPaymentOptionsViewController.selectedPaymentOption {
             self.configuration.delegate?.didCloseWith(paymentOptionSelection: paymentOption.toPaymentOptionSelection())
         } else {
             self.configuration.delegate?.didCloseWith(paymentOptionSelection: nil)
         }
-        delegate?.walletModeViewControllerDidCancel(self)
+        delegate?.savedPaymentMethodsViewControllerDidCancel(self)
 
         if savedPaymentOptionsViewController.isRemovingPaymentMethods {
             savedPaymentOptionsViewController.isRemovingPaymentMethods = false
@@ -332,8 +330,8 @@ extension WalletModeViewController: SheetNavigationBarDelegate {
         }
     }
 }
-extension WalletModeViewController: WalletModeAddPaymentMethodViewControllerDelegate {
-    func didUpdate(_ viewController: WalletModeAddPaymentMethodViewController) {
+extension SavedPaymentMethodsViewController: SavedPaymentMethodsAddPaymentMethodViewControllerDelegate {
+    func didUpdate(_ viewController: SavedPaymentMethodsAddPaymentMethodViewController) {
         //TODO
     }
 //    func shouldOfferLinkSignup(_ viewController: AddPaymentMethodViewController) -> Bool {
@@ -344,7 +342,7 @@ extension WalletModeViewController: WalletModeAddPaymentMethodViewControllerDele
     }
 }
 
-extension WalletModeViewController: SavedPaymentOptionsViewControllerDelegate {
+extension SavedPaymentMethodsViewController: SavedPaymentOptionsViewControllerDelegate {
     func didUpdateSelection(
         viewController: SavedPaymentOptionsViewController,
         paymentMethodSelection: SavedPaymentOptionsViewController.Selection) {
@@ -388,16 +386,16 @@ extension WalletModeViewController: SavedPaymentOptionsViewControllerDelegate {
                     }
                 }
             } else if case .saved(let paymentMethod) = paymentMethodSelection {
-                let displayData = WalletMode.PaymentOptionSelection.PaymentOptionDisplayData(image: paymentMethod.makeIcon(),
+                let displayData = SavedPaymentMethodsSheet.PaymentOptionSelection.PaymentOptionDisplayData(image: paymentMethod.makeIcon(),
                                                                                              label: paymentMethod.paymentSheetLabel)
-                let paymentOptionSelection = WalletMode.PaymentOptionSelection(paymentMethodId: paymentMethod.stripeId,
+                let paymentOptionSelection = SavedPaymentMethodsSheet.PaymentOptionSelection(paymentMethodId: paymentMethod.stripeId,
                                                                                displayData: displayData)
                 self.configuration.delegate?.didCloseWith(paymentOptionSelection: paymentOptionSelection)
-                self.delegate?.walletModeViewControllerDidFinish(self)
+                self.delegate?.savedPaymentMethodsViewControllerDidFinish(self)
             }
         }
     private func initAddPaymentMethodViewController(intent: Intent) {
-        self.addPaymentMethodViewController = WalletModeAddPaymentMethodViewController(
+        self.addPaymentMethodViewController = SavedPaymentMethodsAddPaymentMethodViewController(
             intent: intent,
             configuration: self.configuration,
             delegate: self
@@ -412,10 +410,10 @@ extension WalletModeViewController: SavedPaymentOptionsViewControllerDelegate {
 
 
 extension STPPaymentMethod {
-    func toPaymentOptionSelection() -> WalletMode.PaymentOptionSelection {
-        let displayData = WalletMode.PaymentOptionSelection.PaymentOptionDisplayData(image: self.makeIcon(),
+    func toPaymentOptionSelection() -> SavedPaymentMethodsSheet.PaymentOptionSelection {
+        let displayData = SavedPaymentMethodsSheet.PaymentOptionSelection.PaymentOptionDisplayData(image: self.makeIcon(),
                                                                                      label: self.paymentSheetLabel)
-        return WalletMode.PaymentOptionSelection(paymentMethodId: self.stripeId,
+        return SavedPaymentMethodsSheet.PaymentOptionSelection(paymentMethodId: self.stripeId,
                                                  displayData: displayData)
     }
 }

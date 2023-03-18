@@ -1,14 +1,13 @@
 //
-//  WalletModeConfiguration.swift
+//  SavedPaymentMethodSheetConfiguration.swift
 //  StripePaymentSheet
-//
 //
 
 import Foundation
 import UIKit
 @_spi(STP) import StripePaymentsUI
-extension WalletMode {
 
+extension SavedPaymentMethodsSheet {
 
     public struct Configuration {
         public typealias CreateSetupIntentHandlerCallback = ((@escaping (String?) -> Void) -> Void)
@@ -40,14 +39,14 @@ extension WalletMode {
         /// Configuration for setting the text for the header
         public var selectingSavedCustomHeaderText: String?
 
-        public weak var delegate: WalletModeDelegate?
+        public weak var delegate: SavedPaymentMethodSheetDelegate?
 
         /// The APIClient instance used to make requests to Stripe
         public var apiClient: STPAPIClient = STPAPIClient.shared
 
         public init (customerContext: STPBackendAPIAdapter,
                      createSetupIntentHandler: CreateSetupIntentHandlerCallback?,
-                     delegate: WalletModeDelegate? = nil) {
+                     delegate: SavedPaymentMethodSheetDelegate? = nil) {
             self.customerContext = customerContext
             self.createSetupIntentHandler = createSetupIntentHandler
             self.delegate = delegate
@@ -56,14 +55,13 @@ extension WalletMode {
 }
 
 
-extension WalletMode {
+extension SavedPaymentMethodsSheet {
     public struct PaymentOptionSelection {
 
         public struct PaymentOptionDisplayData {
             public let image: UIImage
             public let label: String
         }
-
         public let paymentMethodId: String
         public let displayData: PaymentOptionDisplayData
     }

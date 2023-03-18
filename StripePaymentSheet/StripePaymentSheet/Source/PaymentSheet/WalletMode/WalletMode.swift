@@ -1,5 +1,5 @@
 //
-//  WalletMode.swift
+//  SavedPaymentMethodSheet.swift
 //  StripePaymentSheet
 //
 //  Created by John Woo on 1/26/23.
@@ -12,10 +12,10 @@ import UIKit
 @_spi(STP) import StripePaymentsUI
 @_spi(STP) import StripeUICore
 
-public class WalletMode {
-    let configuration: WalletMode.Configuration
+public class SavedPaymentMethodsSheet {
+    let configuration: SavedPaymentMethodsSheet.Configuration
 
-    private var walletModeViewController: WalletModeViewController?
+    private var savedPaymentMethodsViewController: SavedPaymentMethodsViewController?
 
     lazy var bottomSheetViewController: BottomSheetViewController = {
         let isTestMode = configuration.apiClient.isTestmode
@@ -41,14 +41,14 @@ public class WalletMode {
         return vc
     }()
 
-    public init(configuration: WalletMode.Configuration) {
+    public init(configuration: SavedPaymentMethodsSheet.Configuration) {
         self.configuration = configuration
     }
 
     @available(iOSApplicationExtension, unavailable)
     @available(macCatalystApplicationExtension, unavailable)
     public func present(from presentingViewController: UIViewController) {
-        // Retain self when being presented, it is not guarnteed that WalletMode instance
+        // Retain self when being presented, it is not guarnteed that SavedPaymentMethodsSheet instance
         // will be retained by caller
         let completion: () -> Void = {
             if let presentingViewController = self.bottomSheetViewController.presentingViewController {
@@ -63,7 +63,7 @@ public class WalletMode {
 
         guard presentingViewController.presentedViewController == nil else {
             assertionFailure("presentingViewController is already presenting a view controller")
-            let error = WalletModeError.unknown(
+            let error = SavedPaymentMethodsSheetError.unknown(
                 debugDescription: "presentingViewController is already presenting a view controller"
             )
             configuration.delegate?.didError(error)
@@ -126,9 +126,9 @@ public class WalletMode {
         }
         loadSpecsPromise.observe { _ in
             DispatchQueue.main.async {
-                let walletViewController = WalletModeViewController(savedPaymentMethods: savedPaymentMethods,
-                                                                    configuration: self.configuration,
-                                                                    delegate: self)
+                let walletViewController = SavedPaymentMethodsViewController(savedPaymentMethods: savedPaymentMethods,
+                                                                             configuration: self.configuration,
+                                                                             delegate: self)
                 self.bottomSheetViewController.contentStack = [walletViewController]
             }
         }
@@ -137,8 +137,8 @@ public class WalletMode {
     var completion: (() -> Void)?
 }
 
-extension WalletMode {
-    func loadPaymentMethods(completion: @escaping (Result<[STPPaymentMethod], WalletModeError>) -> Void) {
+extension SavedPaymentMethodsSheet {
+    func loadPaymentMethods(completion: @escaping (Result<[STPPaymentMethod], SavedPaymentMethodsSheetError>) -> Void) {
 //        TODO: Implement savedPaymentMethodTypes filtering!
 //        let savedPaymentMethodTypes: [STPPaymentMethodType] = [.card]
         configuration.customerContext.listPaymentMethodsForCustomer {
@@ -159,21 +159,21 @@ extension WalletMode {
 
 }
 
-extension WalletMode: WalletModeViewControllerDelegate {
-    func walletModeViewControllerDidCancel(_ walletModeViewController: WalletModeViewController) {
-        walletModeViewController.dismiss(animated: true) {
+extension SavedPaymentMethodsSheet: SavedPaymentMethodsViewControllerDelegate {
+    func savedPaymentMethodsViewControllerDidCancel(_ savedPaymentMethodsViewController: SavedPaymentMethodsViewController) {
+        savedPaymentMethodsViewController.dismiss(animated: true) {
             self.completion?()
         }
     }
 
-    func walletModeViewControllerDidFinish(_ walletModeViewController: WalletModeViewController) {
-        walletModeViewController.dismiss(animated: true) {
+    func savedPaymentMethodsViewControllerDidFinish(_ savedPaymentMethodsViewController: SavedPaymentMethodsViewController) {
+        savedPaymentMethodsViewController.dismiss(animated: true) {
             self.completion?()
         }
     }
 }
 
-extension WalletMode: LoadingViewControllerDelegate {
+extension SavedPaymentMethodsSheet: LoadingViewControllerDelegate {
     func shouldDismiss(_ loadingViewController: LoadingViewController) {
         loadingViewController.dismiss(animated: true) {
             self.completion?()
@@ -184,9 +184,9 @@ extension WalletMode: LoadingViewControllerDelegate {
 
 extension STPCustomerContext {
     /// Returns the currently selected Payment Option for this customer context.
-    /// You can use this to obtain the selected payment method without loading the WalletMode sheet.
+    /// You can use this to obtain the selected payment method without loading the SavedPaymentMethodsSheet.
     public func retrieveSelectedPaymentOption(
-        completion: @escaping (WalletMode.PaymentOptionSelection?, Error?) -> Void
+        completion: @escaping (SavedPaymentMethodsSheet.PaymentOptionSelection?, Error?) -> Void
     ) {
 //        TODO: Implement this!
         self.retrieveSelectedPaymentMethodID { _, _ in

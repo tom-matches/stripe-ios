@@ -1,5 +1,5 @@
 //
-//  WalletModeAddPaymentMethodViewController.swift
+//  SavedPaymentMethodsAddPaymentMethodViewController.swift
 //  StripePaymentSheet
 //
 
@@ -9,16 +9,16 @@ import UIKit
 @_spi(STP) import StripePayments
 @_spi(STP) import StripeUICore
 
-protocol WalletModeAddPaymentMethodViewControllerDelegate: AnyObject {
-    func didUpdate(_ viewController: WalletModeAddPaymentMethodViewController)
+protocol SavedPaymentMethodsAddPaymentMethodViewControllerDelegate: AnyObject {
+    func didUpdate(_ viewController: SavedPaymentMethodsAddPaymentMethodViewController)
     func updateErrorLabel(for: Error?)
 }
 
 
-@objc(STP_Internal_WalletModeAddPaymentMethodViewController)
-class WalletModeAddPaymentMethodViewController: UIViewController {
+@objc(STP_Internal_SavedPaymentMethodsAddPaymentMethodViewController)
+class SavedPaymentMethodsAddPaymentMethodViewController: UIViewController {
     // MARK: - Read-only Properties
-    weak var delegate: WalletModeAddPaymentMethodViewControllerDelegate?
+    weak var delegate: SavedPaymentMethodsAddPaymentMethodViewControllerDelegate?
     lazy var paymentMethodTypes: [PaymentSheet.PaymentMethodType] = {
         let paymentMethodTypes = PaymentSheet.PaymentMethodType.recommendedPaymentMethodTypes(from: intent)
             .filter { $0 == .card }
@@ -41,7 +41,7 @@ class WalletModeAddPaymentMethodViewController: UIViewController {
     }
     // MARK: - Writable Properties
     private let intent: Intent
-    private let configuration: WalletMode.Configuration
+    private let configuration: SavedPaymentMethodsSheet.Configuration
 
     private lazy var paymentMethodFormElement: PaymentMethodElement = {
 //        if selectedPaymentMethodType == .USBankAccount,
@@ -76,8 +76,8 @@ class WalletModeAddPaymentMethodViewController: UIViewController {
 
     required init(
         intent: Intent,
-        configuration: WalletMode.Configuration,
-        delegate: WalletModeAddPaymentMethodViewControllerDelegate
+        configuration: SavedPaymentMethodsSheet.Configuration,
+        delegate: SavedPaymentMethodsAddPaymentMethodViewControllerDelegate
     ) {
         self.configuration = configuration
         self.intent = intent
@@ -146,7 +146,7 @@ class WalletModeAddPaymentMethodViewController: UIViewController {
     private func makeElement(for type: PaymentSheet.PaymentMethodType) -> PaymentMethodElement {
 //        let offerSaveToLinkWhenSupported = delegate?.shouldOfferLinkSignup(self) ?? false
 
-        let formElement = WalletModeFormFactory(
+        let formElement = SavedPaymentMethodsFormFactory(
             intent: intent,
             configuration: configuration,
             paymentMethod: type
@@ -158,7 +158,7 @@ class WalletModeAddPaymentMethodViewController: UIViewController {
     }
 }
 
-extension WalletModeAddPaymentMethodViewController: ElementDelegate {
+extension SavedPaymentMethodsAddPaymentMethodViewController: ElementDelegate {
     func continueToNextField(element: Element) {
         delegate?.didUpdate(self)
     }
@@ -169,7 +169,7 @@ extension WalletModeAddPaymentMethodViewController: ElementDelegate {
     }
 }
 
-extension WalletModeAddPaymentMethodViewController: PaymentMethodTypeCollectionViewDelegate {
+extension SavedPaymentMethodsAddPaymentMethodViewController: PaymentMethodTypeCollectionViewDelegate {
     func didUpdateSelection(_ paymentMethodTypeCollectionView: PaymentMethodTypeCollectionView) {
         //todo
     }

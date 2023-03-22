@@ -140,7 +140,9 @@ class SavedPaymentMethodSheetTestPlayground: UIViewController {
             self.backend.createSetupIntent(customerId: customerId,
                                            completion: completionBlock)
         })
-
+        //TODO: Add configuration to enable/disable apple pay support
+        configuration.applePay = .init(merchantId: "com.foo.example", merchantCountryCode: "US")
+        
         configuration.appearance = appearance
         configuration.delegate = self
         configuration.selectingSavedCustomHeaderText = selectingSavedCustomHeaderTextField.text
@@ -182,7 +184,7 @@ extension SavedPaymentMethodSheetTestPlayground {
 
                 self.selectPaymentMethodButton.isEnabled = true
 
-                self.savedPaymentMethodsSheet?.load()
+//                self.savedPaymentMethodsSheet?.load()
             }
         }
     }

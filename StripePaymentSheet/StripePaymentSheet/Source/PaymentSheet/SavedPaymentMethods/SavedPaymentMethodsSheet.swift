@@ -85,34 +85,53 @@ public class SavedPaymentMethodsSheet {
     @available(iOSApplicationExtension, unavailable)
     @available(macCatalystApplicationExtension, unavailable)
     public func load() {
+        assert(false, "Will be removed, as we have changed the STPBackendAPIAdapter to get the last selected payment method adapter.")
+        /*
         let loadSpecsPromise = Promise<Void>()
+        let loadCustomerPromise = Promise<String?>()
 
         AddressSpecProvider.shared.loadAddressSpecs {
             loadSpecsPromise.resolve(with: ())
         }
-        loadPaymentMethods() { loadResult in
-            loadSpecsPromise.observe { _ in
-                switch(loadResult) {
-                case .success(let savedPaymentMethods):
-                    let flowController = FlowController(savedPaymentMethods: savedPaymentMethods,
-                                                        configuration: self.configuration)
-
-                    if let paymentOption = flowController.paymentOption {
-                        _ = paymentOption.displayData.image
-                        // Do something here to inform the user if needed.
-
-                        //                        let paymentOptionSelection = PaymentOptionSelection(paymentMethodId: paymentOption.paymentMethodId,
-//                                                                            displayData: PaymentOptionSelection.PaymentOptionDisplayData(image: paymentOption.displayData.image,
-//                                                                                                                                         label: paymentOption.displayData.label))
-                        //                        self.configuration.delegate?.didLoadWith(paymentOptionSelection: paymentOptionSelection)
-                    } else {
-//                        self.configuration.delegate?.didLoadWith(paymentOptionSelection: nil)
-                    }
-                case .failure(let error):
-                    self.configuration.delegate?.didError(.errorFetchingSavedPaymentMethods(error))
-                }
+        self.configuration.customerContext.retrieveCustomer { customer, error in
+            if let error = error {
+                loadCustomerPromise.reject(with: error)
+            } else if let customer = customer {
+                loadCustomerPromise.resolve(with: customer.stripeID)
+            } else {
+                loadCustomerPromise.resolve(with: nil)
             }
         }
+        loadPaymentMethods() { loadResult in
+            loadSpecsPromise.observe { _ in
+                loadCustomerPromise.observe { customerPromiseResult in
+                    var customerId: String?
+                    if case .success(let customerIdPromiseResult) = customerPromiseResult {
+                        customerId = customerIdPromiseResult
+                    }
+                    switch(loadResult) {
+                    case .success(let savedPaymentMethods):
+                        let flowController = FlowController(savedPaymentMethods: savedPaymentMethods,
+                                                            configuration: self.configuration,
+                                                            cachedCustomerId: customerId)
+                        
+                        if let paymentOption = flowController.paymentOption {
+                            _ = paymentOption.displayData.image
+                            // Do something here to inform the user if needed.
+                            
+                            //                        let paymentOptionSelection = PaymentOptionSelection(paymentMethodId: paymentOption.paymentMethodId,
+                            //                                                                            displayData: PaymentOptionSelection.PaymentOptionDisplayData(image: paymentOption.displayData.image,
+                            //                                                                                                                                         label: paymentOption.displayData.label))
+                            //                        self.configuration.delegate?.didLoadWith(paymentOptionSelection: paymentOptionSelection)
+                        } else {
+                            //                        self.configuration.delegate?.didLoadWith(paymentOptionSelection: nil)
+                        }
+                    case .failure(let error):
+                        self.configuration.delegate?.didError(.errorFetchingSavedPaymentMethods(error))
+                    }
+                }
+            }
+        }*/
     }
 
     @available(iOSApplicationExtension, unavailable)
@@ -120,15 +139,18 @@ public class SavedPaymentMethodsSheet {
     func present(from presentingViewController: UIViewController,
                  savedPaymentMethods: [STPPaymentMethod]) {
         let loadSpecsPromise = Promise<Void>()
-
         AddressSpecProvider.shared.loadAddressSpecs {
             loadSpecsPromise.resolve(with: ())
         }
+       
         loadSpecsPromise.observe { _ in
             DispatchQueue.main.async {
-                self.bottomSheetViewController.contentStack = [SavedPaymentMethodsViewController(savedPaymentMethods: savedPaymentMethods,
-                                                                                                 configuration: self.configuration,
-                                                                                                 delegate: self)]
+                let isApplePayEnabled = StripeAPI.deviceSupportsApplePay() && self.configuration.applePay != nil
+                let savedPaymentSheetVC = SavedPaymentMethodsViewController(savedPaymentMethods: savedPaymentMethods,
+                                                                            configuration: self.configuration,
+                                                                            isApplePayEnabled: isApplePayEnabled,
+                                                                            delegate: self)
+                self.bottomSheetViewController.contentStack = [savedPaymentSheetVC]
             }
         }
     }

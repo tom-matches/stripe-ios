@@ -19,6 +19,7 @@ class SavedPaymentMethodsViewController: UIViewController {
 
     // MARK: - Read-only Properties
     let savedPaymentMethods: [STPPaymentMethod]
+    let isApplePayEnabled: Bool
     let configuration: SavedPaymentMethodsSheet.Configuration
 
     // MARK: - Writable Properties
@@ -54,18 +55,13 @@ class SavedPaymentMethodsViewController: UIViewController {
         return navBar
     }()
 
-    private lazy var savedPaymentOptionsViewController: SavedPaymentOptionsViewController = {
-        let showApplePay = false         // TODO Plumb this through
-        return SavedPaymentOptionsViewController(
+    private lazy var savedPaymentOptionsViewController: SavedPaymentMethodsCollectionViewController = {
+        let showApplePay = isApplePayEnabled
+        return SavedPaymentMethodsCollectionViewController(
             savedPaymentMethods: savedPaymentMethods,
+            savedPaymentMethodsConfiguration: self.configuration,
             configuration: .init(
-//                TODO: Why does the view have the customer ID? What is this used for?
-//                If we use a STPCustomerContext, the user could implement alternative behaviors,
-//                so the VC shouldn't know the Customer ID directly.
-//                customerID: configuration.customer.id,
-                customerID: nil,
                 showApplePay: showApplePay,
-                showLink: false,
                 autoSelectDefaultBehavior: savedPaymentMethods.isEmpty ? .none : .onlyIfMatched
             ),
             appearance: configuration.appearance,
@@ -119,16 +115,16 @@ class SavedPaymentMethodsViewController: UIViewController {
     required init(
         savedPaymentMethods: [STPPaymentMethod],
         configuration: SavedPaymentMethodsSheet.Configuration,
-// TODO
-//        isApplePayEnabled: Bool,
+        isApplePayEnabled: Bool,
         delegate: SavedPaymentMethodsViewControllerDelegate
     ) {
         self.savedPaymentMethods = savedPaymentMethods
         self.configuration = configuration
+        self.isApplePayEnabled = isApplePayEnabled
         self.delegate = delegate
         self.mode = .selectingSaved
         self.addPaymentMethodViewController = nil
-        super.init(nibName: nil, bundle: nil)
+                super.init(nibName: nil, bundle: nil)
 
         self.view.backgroundColor = configuration.appearance.colors.background
     }
@@ -342,10 +338,10 @@ extension SavedPaymentMethodsViewController: SavedPaymentMethodsAddPaymentMethod
     }
 }
 
-extension SavedPaymentMethodsViewController: SavedPaymentOptionsViewControllerDelegate {
+extension SavedPaymentMethodsViewController: SavedPaymentMethodsCollectionViewControllerDelegate {
     func didUpdateSelection(
-        viewController: SavedPaymentOptionsViewController,
-        paymentMethodSelection: SavedPaymentOptionsViewController.Selection) {
+        viewController: SavedPaymentMethodsCollectionViewController,
+        paymentMethodSelection: SavedPaymentMethodsCollectionViewController.Selection) {
             // TODO: Add some boolean flag here to avoid making duplicate calls
             if case .add = paymentMethodSelection {
                 mode = .addingNew
@@ -402,8 +398,8 @@ extension SavedPaymentMethodsViewController: SavedPaymentOptionsViewControllerDe
         )
     }
     func didSelectRemove(
-        viewController: SavedPaymentOptionsViewController,
-        paymentMethodSelection: SavedPaymentOptionsViewController.Selection) {
+        viewController: SavedPaymentMethodsCollectionViewController,
+        paymentMethodSelection: SavedPaymentMethodsCollectionViewController.Selection) {
             //todo
         }
 }

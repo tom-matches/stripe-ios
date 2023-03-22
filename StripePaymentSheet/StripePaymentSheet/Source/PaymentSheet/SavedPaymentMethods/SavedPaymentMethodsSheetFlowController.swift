@@ -37,12 +37,13 @@ extension SavedPaymentMethodsSheet {
         private lazy var paymentOptionsViewController: SavedPaymentMethodsViewController = {
             return SavedPaymentMethodsViewController(savedPaymentMethods: savedPaymentMethods,
                                                      configuration: configuration,
+                                                     isApplePayEnabled: self.configuration.applePay != nil,
                                                      delegate: self)
         }()
 
         required init(
             savedPaymentMethods: [STPPaymentMethod],
-            configuration: Configuration            
+            configuration: Configuration
         ) {
             self.savedPaymentMethods = savedPaymentMethods
             self.configuration = configuration

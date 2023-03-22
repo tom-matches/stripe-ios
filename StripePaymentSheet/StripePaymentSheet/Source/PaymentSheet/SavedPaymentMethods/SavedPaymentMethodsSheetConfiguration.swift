@@ -44,12 +44,35 @@ extension SavedPaymentMethodsSheet {
         /// The APIClient instance used to make requests to Stripe
         public var apiClient: STPAPIClient = STPAPIClient.shared
 
+        public var applePay: ApplePayConfiguration?
+        
         public init (customerContext: STPBackendAPIAdapter,
                      createSetupIntentHandler: CreateSetupIntentHandlerCallback?,
+                     applePay: ApplePayConfiguration? = nil,
                      delegate: SavedPaymentMethodsSheetDelegate? = nil) {
             self.customerContext = customerContext
             self.createSetupIntentHandler = createSetupIntentHandler
+            self.applePay = applePay
             self.delegate = delegate
+        }
+    }
+    /// Configuration related to Apple Pay
+    public struct ApplePayConfiguration {
+        /// The Apple Merchant Identifier to use during Apple Pay transactions.
+        /// To obtain one, see https://stripe.com/docs/apple-pay#native
+        public let merchantId: String
+
+        /// The two-letter ISO 3166 code of the country of your business, e.g. "US"
+        /// See your account's country value here https://dashboard.stripe.com/settings/account
+        public let merchantCountryCode: String
+
+        /// Initializes a ApplePayConfiguration
+        public init(
+            merchantId: String,
+            merchantCountryCode: String
+        ) {
+            self.merchantId = merchantId
+            self.merchantCountryCode = merchantCountryCode
         }
     }
 }

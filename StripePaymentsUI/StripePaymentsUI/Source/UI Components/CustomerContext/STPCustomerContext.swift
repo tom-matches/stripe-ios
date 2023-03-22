@@ -414,7 +414,7 @@ open class STPCustomerContext: NSObject, STPBackendAPIAdapter {
     @objc public func setSelectedPaymentMethodID(
         paymentMethodId: String, completion: @escaping (Error?) -> Void
     ) {
-        self.setSelectedPaymentMethodID(paymentMethodId: paymentMethodId, completion: completion)
+        self.saveLastSelectedPaymentMethodID(forCustomer: paymentMethodId, completion: completion)
     }
     @objc public func retrieveSelectedPaymentMethodID(
         completion: @escaping (String?, Error?) -> Void

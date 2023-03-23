@@ -156,7 +156,6 @@ extension SavedPaymentMethodsSheet: LoadingViewControllerDelegate {
     }
 }
 
-//TODO: Test this -- need to be able to figure out the selection/setting default etc.
 extension STPCustomerContext {
     /// Returns the currently selected Payment Option for this customer context.
     /// You can use this to obtain the selected payment method without loading the SavedPaymentMethodsSheet.
@@ -179,8 +178,10 @@ extension STPCustomerContext {
                     let storedPaymentMethod = DefaultPaymentMethodStore.PaymentMethodIdentifier(value: paymentMethod)
                     switch(storedPaymentMethod) {
                     case .applePay:
+                        //TODO
                         print("we got apple pay")
                     case .link:
+                        //TODO
                         print("we got link")
                     case .stripe(let id):
                         guard let matchingPaymentMethod = paymentMethods.first(where:{ $0.stripeId == id }) else {

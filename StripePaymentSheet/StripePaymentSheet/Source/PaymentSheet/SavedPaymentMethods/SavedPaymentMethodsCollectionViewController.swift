@@ -248,7 +248,7 @@ class SavedPaymentMethodsCollectionViewController: UIViewController {
             
             self.collectionView.reloadData()
             self.collectionView.selectItem(at: self.selectedIndexPath, animated: false, scrollPosition: [])
-            self.collectionView.scrollToItem(at: IndexPath(item: 0, section: 0), at: .left, animated: false)
+            self.collectionView.scrollRectToVisible(CGRectZero, animated: false)
         }
     }
 

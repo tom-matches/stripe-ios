@@ -58,6 +58,7 @@ class SavedPaymentMethodSheetTestPlayground: UIViewController {
 
     var ephemeralKey: String?
     var customerId: String?
+    var customerContext: STPCustomerContext?
     var savedPaymentMethodEndpoint: String = defaultSavedPaymentMethodEndpoint
     var appearance = PaymentSheet.Appearance.default
 
@@ -134,7 +135,8 @@ class SavedPaymentMethodSheetTestPlayground: UIViewController {
     }
 
     func walletModeConfiguration(customerId: String, ephemeralKey: String) -> SavedPaymentMethodsSheet.Configuration {
-        let customerContext = STPCustomerContext.init(customerId: customerId, ephemeralKeySecret: ephemeralKey)
+        let customerContext = STPCustomerContext(customerId: customerId, ephemeralKeySecret: ephemeralKey)
+        self.customerContext = customerContext
         var configuration = SavedPaymentMethodsSheet.Configuration(customerContext: customerContext,
                                                                    createSetupIntentHandler: { completionBlock in
             self.backend.createSetupIntent(customerId: customerId,
@@ -184,7 +186,10 @@ extension SavedPaymentMethodSheetTestPlayground {
 
                 self.selectPaymentMethodButton.isEnabled = true
 
-//                self.savedPaymentMethodsSheet?.load()
+                self.customerContext?.retrieveSelectedPaymentOption { selection, error in
+                    self.paymentOptionSelection = selection
+                    self.updateButtons()
+                }
             }
         }
     }
@@ -193,7 +198,13 @@ extension SavedPaymentMethodSheetTestPlayground {
 extension SavedPaymentMethodSheetTestPlayground: SavedPaymentMethodsSheetDelegate {
     func didCloseWith(paymentOptionSelection: SavedPaymentMethodsSheet.PaymentOptionSelection?) {
         self.paymentOptionSelection = paymentOptionSelection
-        updateButtons()
+        guard let paymentMethodId = paymentOptionSelection?.paymentMethodId else {
+            updateButtons()
+            return
+        }
+        self.customerContext?.setSelectedPaymentMethodID(paymentMethodId: paymentMethodId, completion: { error in
+            self.updateButtons()
+        })
     }
     
     func didError(_ error: SavedPaymentMethodsSheetError) {

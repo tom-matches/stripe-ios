@@ -41,6 +41,7 @@ class SavedPaymentMethodsFormFactory {
     }
 
     func makeCard(theme: ElementsUITheme = .default) -> PaymentMethodElement {
+        // TODO: Figure out if we need to add checkbox -- probably not, basic integration add payment method does not.
 //        let saveCheckbox = makeSaveCheckbox(
 //            label: String.Localized.save_this_card_for_future_$merchant_payments(
 //                merchantDisplayName: configuration.merchantDisplayName

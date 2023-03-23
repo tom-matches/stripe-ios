@@ -17,6 +17,14 @@ public class SavedPaymentMethodsSheet {
 
     private var savedPaymentMethodsViewController: SavedPaymentMethodsViewController?
 
+    /// The STPPaymentHandler instance
+    @available(iOSApplicationExtension, unavailable)
+    @available(macCatalystApplicationExtension, unavailable)
+    lazy var paymentHandler: STPPaymentHandler = { STPPaymentHandler(apiClient: configuration.apiClient, formSpecPaymentHandler: PaymentSheetFormSpecPaymentHandler()) }()
+
+    /// The parent view controller to present
+    @available(iOSApplicationExtension, unavailable)
+    @available(macCatalystApplicationExtension, unavailable)
     lazy var bottomSheetViewController: BottomSheetViewController = {
         let isTestMode = configuration.apiClient.isTestmode
         let loadingViewController = LoadingViewController(
@@ -30,8 +38,7 @@ public class SavedPaymentMethodsSheet {
             appearance: configuration.appearance,
             isTestMode: isTestMode,
             didCancelNative3DS2: { [weak self] in
-                // TODO: Probably needed due to.. 3ds2 w/ cards
-//                self?.paymentHandler.cancel3DS2ChallengeFlow()
+                self?.paymentHandler.cancel3DS2ChallengeFlow()
             }
         )
 
@@ -84,58 +91,6 @@ public class SavedPaymentMethodsSheet {
 
     @available(iOSApplicationExtension, unavailable)
     @available(macCatalystApplicationExtension, unavailable)
-    public func load() {
-        assert(false, "Will be removed, as we have changed the STPBackendAPIAdapter to get the last selected payment method adapter.")
-        /*
-        let loadSpecsPromise = Promise<Void>()
-        let loadCustomerPromise = Promise<String?>()
-
-        AddressSpecProvider.shared.loadAddressSpecs {
-            loadSpecsPromise.resolve(with: ())
-        }
-        self.configuration.customerContext.retrieveCustomer { customer, error in
-            if let error = error {
-                loadCustomerPromise.reject(with: error)
-            } else if let customer = customer {
-                loadCustomerPromise.resolve(with: customer.stripeID)
-            } else {
-                loadCustomerPromise.resolve(with: nil)
-            }
-        }
-        loadPaymentMethods() { loadResult in
-            loadSpecsPromise.observe { _ in
-                loadCustomerPromise.observe { customerPromiseResult in
-                    var customerId: String?
-                    if case .success(let customerIdPromiseResult) = customerPromiseResult {
-                        customerId = customerIdPromiseResult
-                    }
-                    switch(loadResult) {
-                    case .success(let savedPaymentMethods):
-                        let flowController = FlowController(savedPaymentMethods: savedPaymentMethods,
-                                                            configuration: self.configuration,
-                                                            cachedCustomerId: customerId)
-                        
-                        if let paymentOption = flowController.paymentOption {
-                            _ = paymentOption.displayData.image
-                            // Do something here to inform the user if needed.
-                            
-                            //                        let paymentOptionSelection = PaymentOptionSelection(paymentMethodId: paymentOption.paymentMethodId,
-                            //                                                                            displayData: PaymentOptionSelection.PaymentOptionDisplayData(image: paymentOption.displayData.image,
-                            //                                                                                                                                         label: paymentOption.displayData.label))
-                            //                        self.configuration.delegate?.didLoadWith(paymentOptionSelection: paymentOptionSelection)
-                        } else {
-                            //                        self.configuration.delegate?.didLoadWith(paymentOptionSelection: nil)
-                        }
-                    case .failure(let error):
-                        self.configuration.delegate?.didError(.errorFetchingSavedPaymentMethods(error))
-                    }
-                }
-            }
-        }*/
-    }
-
-    @available(iOSApplicationExtension, unavailable)
-    @available(macCatalystApplicationExtension, unavailable)
     func present(from presentingViewController: UIViewController,
                  savedPaymentMethods: [STPPaymentMethod]) {
         let loadSpecsPromise = Promise<Void>()
@@ -160,8 +115,6 @@ public class SavedPaymentMethodsSheet {
 
 extension SavedPaymentMethodsSheet {
     func loadPaymentMethods(completion: @escaping (Result<[STPPaymentMethod], SavedPaymentMethodsSheetError>) -> Void) {
-//        TODO: Implement savedPaymentMethodTypes filtering!
-//        let savedPaymentMethodTypes: [STPPaymentMethodType] = [.card]
         configuration.customerContext.listPaymentMethodsForCustomer {
             paymentMethods, error in
             guard let paymentMethods = paymentMethods, error == nil else {
@@ -173,7 +126,8 @@ extension SavedPaymentMethodsSheet {
                 completion(.failure(.errorFetchingSavedPaymentMethods(error)))
                 return
             }
-            completion(.success(paymentMethods))
+            let filteredPaymentMethods = paymentMethods.filter{ $0.type == .card }
+            completion(.success(filteredPaymentMethods))
         }
 
     }

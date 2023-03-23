@@ -383,7 +383,7 @@ extension SavedPaymentMethodsViewController: SavedPaymentMethodsCollectionViewCo
                 }
             } else if case .saved(let paymentMethod) = paymentMethodSelection {
                 let displayData = SavedPaymentMethodsSheet.PaymentOptionSelection.PaymentOptionDisplayData(image: paymentMethod.makeIcon(),
-                                                                                             label: paymentMethod.paymentSheetLabel)
+                                                                                                           label: paymentMethod.paymentSheetLabel)
                 let paymentOptionSelection = SavedPaymentMethodsSheet.PaymentOptionSelection(paymentMethodId: paymentMethod.stripeId,
                                                                                displayData: displayData)
                 self.configuration.delegate?.didCloseWith(paymentOptionSelection: paymentOptionSelection)

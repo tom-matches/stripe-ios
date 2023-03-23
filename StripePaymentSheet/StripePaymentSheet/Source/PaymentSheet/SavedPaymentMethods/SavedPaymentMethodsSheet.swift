@@ -156,16 +156,46 @@ extension SavedPaymentMethodsSheet: LoadingViewControllerDelegate {
     }
 }
 
-
+//TODO: Test this -- need to be able to figure out the selection/setting default etc.
 extension STPCustomerContext {
     /// Returns the currently selected Payment Option for this customer context.
     /// You can use this to obtain the selected payment method without loading the SavedPaymentMethodsSheet.
     public func retrieveSelectedPaymentOption(
         completion: @escaping (SavedPaymentMethodsSheet.PaymentOptionSelection?, Error?) -> Void
     ) {
-//        TODO: Implement this!
-        self.retrieveSelectedPaymentMethodID { _, _ in
-            completion(nil, nil)
+        self.listPaymentMethodsForCustomer { paymentMethods, error in
+            guard let paymentMethods = paymentMethods, error == nil else {
+                // TODO: Pass errors from the customerContext
+                let error = PaymentSheetError.unknown(debugDescription: "Failed to retrieve PaymentMethods for the customer")
+                completion(nil, error)
+                return
+            }
+            self.retrieveSelectedPaymentMethodID { paymentMethod, error in
+                guard error == nil else {
+                    completion(nil, error)
+                    return
+                }
+                if let paymentMethod = paymentMethod {
+                    let storedPaymentMethod = DefaultPaymentMethodStore.PaymentMethodIdentifier(value: paymentMethod)
+                    switch(storedPaymentMethod) {
+                    case .applePay:
+                        print("we got apple pay")
+                    case .link:
+                        print("we got link")
+                    case .stripe(let id):
+                        guard let matchingPaymentMethod = paymentMethods.first(where:{ $0.stripeId == id }) else {
+                            completion(nil, nil)
+                            return
+                        }
+                        completion(SavedPaymentMethodsSheet.PaymentOptionSelection.objectFor(matchingPaymentMethod), nil)
+                        return
+                    }
+                } else {
+                    completion(nil, nil)
+                }
+                
+            }
+
         }
     }
 }

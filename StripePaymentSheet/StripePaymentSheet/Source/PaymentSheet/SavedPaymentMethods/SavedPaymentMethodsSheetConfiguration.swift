@@ -87,5 +87,10 @@ extension SavedPaymentMethodsSheet {
         }
         public let paymentMethodId: String
         public let displayData: PaymentOptionDisplayData
+        
+        public static func objectFor(_ matchingPaymentMethod: STPPaymentMethod) -> PaymentOptionSelection {
+            let data = PaymentOptionDisplayData(image: matchingPaymentMethod.makeIcon(), label: matchingPaymentMethod.description)
+            return PaymentOptionSelection(paymentMethodId: matchingPaymentMethod.stripeId, displayData: data)
+        }
     }
 }

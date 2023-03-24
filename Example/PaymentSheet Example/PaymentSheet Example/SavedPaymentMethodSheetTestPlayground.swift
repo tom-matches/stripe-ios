@@ -286,6 +286,7 @@ extension SavedPaymentMethodSheetTestPlayground {
 class SavedPaymentMethodsBackend {
 
     let endpoint: String
+    var clientSecret: String?
     public init(endpoint: String) {
         self.endpoint = endpoint
     }
@@ -318,6 +319,10 @@ class SavedPaymentMethodsBackend {
     }
 
     func createSetupIntent(customerId: String, completion: @escaping (String?) -> Void) {
+        guard clientSecret == nil else {
+            completion(clientSecret)
+            return
+        }
         let body = [ "customer_id": customerId,
         ] as [String: Any]
         let url = URL(string: "\(endpoint)/create_setup_intent")!
@@ -341,6 +346,7 @@ class SavedPaymentMethodsBackend {
                 completion(nil)
                 return
             }
+            self.clientSecret = secret
             completion(secret)
         }
         task.resume()

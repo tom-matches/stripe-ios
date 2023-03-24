@@ -6,6 +6,7 @@
 import Foundation
 @_spi(STP) import StripeCore
 @_spi(STP) import StripePayments
+@_spi(STP) import StripePaymentsUI
 @_spi(STP) import StripeUICore
 import UIKit
 
@@ -343,7 +344,8 @@ extension SavedPaymentMethodsViewController: SavedPaymentMethodsCollectionViewCo
         viewController: SavedPaymentMethodsCollectionViewController,
         paymentMethodSelection: SavedPaymentMethodsCollectionViewController.Selection) {
             // TODO: Add some boolean flag here to avoid making duplicate calls
-            if case .add = paymentMethodSelection {
+            switch(paymentMethodSelection) {
+            case .add:
                 mode = .addingNew
                 error = nil  // Clear any errors
                 if let intent = self.intent,
@@ -363,7 +365,7 @@ extension SavedPaymentMethodsViewController: SavedPaymentMethodsCollectionViewCo
                                     let setupIntent = Intent.setupIntent(stpSetupIntent)
                                     self.intent = setupIntent
                                     self.initAddPaymentMethodViewController(intent: setupIntent)
-
+                                    
                                 case .failure(let error):
                                     self.configuration.delegate?.didError(.setupIntentFetchError(error))
                                 }
@@ -371,22 +373,27 @@ extension SavedPaymentMethodsViewController: SavedPaymentMethodsCollectionViewCo
                             }
                         })
                     } else {
-                        // Directly attach the PaymentMethod using the STPCustomerContext or user's API adapter.
-//                        TODO: The PaymentMethod must be available for us to do this. Create a PaymentMethod and attach it here.
-//                        self.configuration.customerContext.attachPaymentMethod(toCustomer: paymentMethod) { error in
-//                            if let error = error {
-//                                // TODO: Error for attaching payment method to customer
-//                                self.configuration.delegate?.didError(.unknown(debugDescription: "Implement this"))
-//                            }
-//                        }
+                    // Directly attach the PaymentMethod using the STPCustomerContext or user's API adapter.
+                    //                        TODO: The PaymentMethod must be available for us to do this. Create a PaymentMethod and attach it here.
+                    //                        self.configuration.customerContext.attachPaymentMethod(toCustomer: paymentMethod) { error in
+                    //                            if let error = error {
+                    //                                // TODO: Error for attaching payment method to customer
+                    //                                self.configuration.delegate?.didError(.unknown(debugDescription: "Implement this"))
+                    //                            }
+                    //                        }
                     }
                 }
-            } else if case .saved(let paymentMethod) = paymentMethodSelection {
+            case .saved(let paymentMethod):
                 let displayData = SavedPaymentMethodsSheet.PaymentOptionSelection.PaymentOptionDisplayData(image: paymentMethod.makeIcon(),
                                                                                                            label: paymentMethod.paymentSheetLabel)
-                let paymentOptionSelection = SavedPaymentMethodsSheet.PaymentOptionSelection(paymentMethodId: paymentMethod.stripeId,
-                                                                               displayData: displayData)
+                let paymentOptionSelection = SavedPaymentMethodsSheet.PaymentOptionSelection.saved(paymentMethod: paymentMethod, paymentOptionDisplayData: displayData)
                 self.configuration.delegate?.didCloseWith(paymentOptionSelection: paymentOptionSelection)
+                self.delegate?.savedPaymentMethodsViewControllerDidFinish(self)
+            case .applePay:
+//                let displayData =
+////                    .PaymentOptionDisplayData(image: Image.apple_pay_mark.makeImage().withRenderingMode(.alwaysOriginal),
+////                                                                                                           label: String.Localized.apple_pay)
+                self.configuration.delegate?.didCloseWith(paymentOptionSelection: SavedPaymentMethodsSheet.PaymentOptionSelection.applePay())
                 self.delegate?.savedPaymentMethodsViewControllerDidFinish(self)
             }
         }
@@ -409,7 +416,7 @@ extension STPPaymentMethod {
     func toPaymentOptionSelection() -> SavedPaymentMethodsSheet.PaymentOptionSelection {
         let displayData = SavedPaymentMethodsSheet.PaymentOptionSelection.PaymentOptionDisplayData(image: self.makeIcon(),
                                                                                      label: self.paymentSheetLabel)
-        return SavedPaymentMethodsSheet.PaymentOptionSelection(paymentMethodId: self.stripeId,
-                                                 displayData: displayData)
+        return SavedPaymentMethodsSheet.PaymentOptionSelection.saved(paymentMethod: self,
+                                                                     paymentOptionDisplayData: displayData)
     }
 }

@@ -86,12 +86,12 @@ import UIKit
         completion: STPErrorBlock?
     )
     
-    /// Set the last selected Payment Method ID for the customer
-    @objc optional func setSelectedPaymentMethodID(
-        paymentMethodId: String, completion: @escaping (Error?) -> Void
+    /// Set the last selected Payment Method Option
+    @objc optional func setSelectedPaymentMethodOption(
+        persistableValue: String, completion: @escaping (Error?) -> Void
     )
-    /// Retrieve the last selected Payment Method ID for the customer
-    @objc optional func retrieveSelectedPaymentMethodID(
+    /// Retrieve the last selected Payment Method Option for the customer
+    @objc optional func retrieveSelectedPaymentMethodOption(
         completion: @escaping (String?, Error?) -> Void
     )
 

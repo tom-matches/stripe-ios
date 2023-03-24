@@ -6,6 +6,8 @@
 import Foundation
 import UIKit
 @_spi(STP) import StripePaymentsUI
+@_spi(STP) import StripeUICore
+@_spi(STP) import StripeCore
 
 extension SavedPaymentMethodsSheet {
 
@@ -79,18 +81,42 @@ extension SavedPaymentMethodsSheet {
 
 
 extension SavedPaymentMethodsSheet {
-    public struct PaymentOptionSelection {
-
+    public enum PaymentOptionSelection {
+        
         public struct PaymentOptionDisplayData {
             public let image: UIImage
             public let label: String
         }
-        public let paymentMethodId: String
-        public let displayData: PaymentOptionDisplayData
+        case applePay(paymentOptionDisplayData: PaymentOptionDisplayData)
+        case saved(paymentMethod: STPPaymentMethod, paymentOptionDisplayData: PaymentOptionDisplayData)
+        //new
         
-        public static func objectFor(_ matchingPaymentMethod: STPPaymentMethod) -> PaymentOptionSelection {
-            let data = PaymentOptionDisplayData(image: matchingPaymentMethod.makeIcon(), label: matchingPaymentMethod.paymentSheetLabel)
-            return PaymentOptionSelection(paymentMethodId: matchingPaymentMethod.stripeId, displayData: data)
+        public static func savedPaymentMethod(_ paymentMethod: STPPaymentMethod) -> PaymentOptionSelection {
+            let data = PaymentOptionDisplayData(image: paymentMethod.makeIcon(), label: paymentMethod.paymentSheetLabel)
+            return .saved(paymentMethod: paymentMethod, paymentOptionDisplayData: data)
+        }
+        public static func applePay() -> PaymentOptionSelection {
+            let displayData = SavedPaymentMethodsSheet.PaymentOptionSelection.PaymentOptionDisplayData(image: Image.apple_pay_mark.makeImage().withRenderingMode(.alwaysOriginal),
+                                                                                                       label: String.Localized.apple_pay)
+            return .applePay(paymentOptionDisplayData: displayData)
+        }
+        
+        public func displayData() -> PaymentOptionDisplayData {
+            switch(self) {
+            case .applePay(let paymentOptionDisplayData):
+                return paymentOptionDisplayData
+            case .saved(_, let paymentOptionDisplayData):
+                return paymentOptionDisplayData
+            }
+        }
+        
+        public func persistableValue() -> String {
+            switch(self) {
+            case .applePay:
+                return DefaultPaymentMethodStore.PaymentMethodIdentifier.applePay.value
+            case .saved(let paymentMethod, _):
+                return paymentMethod.stripeId
+            }
         }
     }
 }

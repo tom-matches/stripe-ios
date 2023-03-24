@@ -95,9 +95,9 @@ class SavedPaymentMethodSheetTestPlayground: UIViewController {
     func updateButtons() {
         // Update the payment method selection button
         if let paymentOption = self.paymentOptionSelection {
-            self.selectPaymentMethodButton.setTitle(paymentOption.displayData.label, for: .normal)
+            self.selectPaymentMethodButton.setTitle(paymentOption.displayData().label, for: .normal)
             self.selectPaymentMethodButton.setTitleColor(.label, for: .normal)
-            self.selectPaymentMethodImage.image = paymentOption.displayData.image
+            self.selectPaymentMethodImage.image = paymentOption.displayData().image
         } else {
             self.selectPaymentMethodButton.setTitle("Select", for: .normal)
             self.selectPaymentMethodButton.setTitleColor(.systemBlue, for: .normal)
@@ -198,11 +198,11 @@ extension SavedPaymentMethodSheetTestPlayground {
 extension SavedPaymentMethodSheetTestPlayground: SavedPaymentMethodsSheetDelegate {
     func didCloseWith(paymentOptionSelection: SavedPaymentMethodsSheet.PaymentOptionSelection?) {
         self.paymentOptionSelection = paymentOptionSelection
-        guard let paymentMethodId = paymentOptionSelection?.paymentMethodId else {
+        guard let paymentOptionSelection = paymentOptionSelection else {
             updateButtons()
             return
         }
-        self.customerContext?.setSelectedPaymentMethodID(paymentMethodId: paymentMethodId, completion: { error in
+        self.customerContext?.setSelectedPaymentMethodOption(persistableValue: paymentOptionSelection.persistableValue(), completion: { error in
             self.updateButtons()
         })
     }

@@ -169,17 +169,16 @@ extension STPCustomerContext {
                 completion(nil, error)
                 return
             }
-            self.retrieveSelectedPaymentMethodID { paymentMethod, error in
+            self.retrieveSelectedPaymentMethodOption { persistedPaymentMethodOption, error in
                 guard error == nil else {
                     completion(nil, error)
                     return
                 }
-                if let paymentMethod = paymentMethod {
-                    let storedPaymentMethod = DefaultPaymentMethodStore.PaymentMethodIdentifier(value: paymentMethod)
+                if let persistedPaymentMethodOption = persistedPaymentMethodOption {
+                    let storedPaymentMethod = DefaultPaymentMethodStore.PaymentMethodIdentifier(value: persistedPaymentMethodOption)
                     switch(storedPaymentMethod) {
                     case .applePay:
-                        //TODO
-                        print("we got apple pay")
+                        completion(SavedPaymentMethodsSheet.PaymentOptionSelection.applePay(), nil)
                     case .link:
                         //TODO
                         print("we got link")
@@ -188,7 +187,7 @@ extension STPCustomerContext {
                             completion(nil, nil)
                             return
                         }
-                        completion(SavedPaymentMethodsSheet.PaymentOptionSelection.objectFor(matchingPaymentMethod), nil)
+                        completion(SavedPaymentMethodsSheet.PaymentOptionSelection.savedPaymentMethod(matchingPaymentMethod), nil)
                         return
                     }
                 } else {

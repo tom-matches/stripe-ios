@@ -28,7 +28,8 @@ class SavedPaymentMethodsViewController: UIViewController {
     private(set) var isDismissable: Bool = true
     enum Mode {
         case selectingSaved
-        case addingNew
+        case addingNewWithSetupIntent
+        case addingNewPaymentMethodAttachToCustomer
     }
 
     private var mode: Mode
@@ -38,7 +39,7 @@ class SavedPaymentMethodsViewController: UIViewController {
 
     var selectedPaymentOption: PaymentOption? {
         switch mode {
-        case .addingNew:
+        case .addingNewWithSetupIntent, .addingNewPaymentMethodAttachToCustomer:
             if let paymentOption = addPaymentMethodViewController?.paymentOption {
                 return paymentOption
             }
@@ -82,7 +83,7 @@ class SavedPaymentMethodsViewController: UIViewController {
                         "A button used to confirm selecting a saved payment method"
                     ))
   //              }
-            case .addingNew:
+            case .addingNewWithSetupIntent, .addingNewPaymentMethodAttachToCustomer:
                 return .setup
             }
         }()
@@ -183,7 +184,7 @@ class SavedPaymentMethodsViewController: UIViewController {
                     "Select your payment method",
                     "Title shown above a carousel containing the customer's payment methods")
             }
-        case .addingNew:
+        case .addingNewWithSetupIntent, .addingNewPaymentMethodAttachToCustomer:
             actionButton.isHidden = false
             headerLabel.text = STPLocalizedString(
                 "Add your payment information",
@@ -201,7 +202,7 @@ class SavedPaymentMethodsViewController: UIViewController {
         switchContentIfNecessary(to: contentViewController, containerView: paymentContainerView)
     }
     private func contentViewControllerFor(mode: Mode) -> UIViewController? {
-        if mode == .addingNew {
+        if mode == .addingNewWithSetupIntent || mode == .addingNewPaymentMethodAttachToCustomer {
             return addPaymentMethodViewController
         }
         return savedPaymentOptionsViewController
@@ -221,7 +222,7 @@ class SavedPaymentMethodsViewController: UIViewController {
                             for: .touchUpInside)
                         return .close(showAdditionalButton: false)
                     }
-                case .addingNew:
+                case .addingNewWithSetupIntent, .addingNewPaymentMethodAttachToCustomer:
                     self.navigationBar.additionalButton.removeTarget(
                         self, action: #selector(didSelectEditSavedPaymentMethodsButton),
                         for: .touchUpInside)
@@ -243,16 +244,47 @@ class SavedPaymentMethodsViewController: UIViewController {
         }
     }
     private func didTapActionButton() {
-        guard mode == .addingNew,
+        guard mode == .addingNewWithSetupIntent || mode == .addingNewPaymentMethodAttachToCustomer,
         let newPaymentOption = addPaymentMethodViewController?.paymentOption else {
             //Button will only appear while adding a new payment method
             return
         }
-        addPaymentOption(paymentOption: newPaymentOption)
+        if mode == .addingNewWithSetupIntent {
+            addPaymentOption(paymentOption: newPaymentOption)
+        } else if mode == .addingNewPaymentMethodAttachToCustomer {
+            addPaymentOptionToCustomer(paymentOption: newPaymentOption)
+        }
 
     }
     private func addPaymentOption(paymentOption: PaymentOption) {
-        print("stubbed out")
+        print("stubbed out -- using setup intent")
+    }
+    private func addPaymentOptionToCustomer(paymentOption: PaymentOption) {
+        if case .new(let confirmParams) = paymentOption  {
+            configuration.apiClient.createPaymentMethod(with: confirmParams.paymentMethodParams) { paymentMethod, error in
+                if let error = error {
+                    self.configuration.delegate?.didError(.createPaymentMethod(error))
+                    return
+                }
+                guard let paymentMethod = paymentMethod else {
+                    // TODO: test UI to make sure we fail gracefully
+                    self.configuration.delegate?.didError(.unknown(debugDescription: "No payment method available"))
+                    return
+                }
+                self.configuration.customerContext.attachPaymentMethod(toCustomer: paymentMethod) { error in
+                    guard error == nil else {
+                        //TODO: Handle errors properly
+                        self.configuration.delegate?.didError(.attachPaymentMethod(error!))
+                        return
+                    }
+                    let displayData = SavedPaymentMethodsSheet.PaymentOptionSelection.PaymentOptionDisplayData(image: paymentMethod.makeIcon(),
+                                                                                                               label: paymentMethod.paymentSheetLabel)
+                    let paymentOptionSelection = SavedPaymentMethodsSheet.PaymentOptionSelection.saved(paymentMethod: paymentMethod, paymentOptionDisplayData: displayData)
+                    self.configuration.delegate?.didCloseWith(paymentOptionSelection: paymentOptionSelection)
+                    self.delegate?.savedPaymentMethodsViewControllerDidFinish(self)
+                }
+            }
+        }
     }
 
     // MARK: Helpers
@@ -318,7 +350,7 @@ extension SavedPaymentMethodsViewController: SheetNavigationBarDelegate {
 
     func sheetNavigationBarDidBack(_ sheetNavigationBar: SheetNavigationBar) {
         switch mode {
-        case .addingNew:
+        case .addingNewWithSetupIntent, .addingNewPaymentMethodAttachToCustomer:
             error = nil
             mode = .selectingSaved
             updateUI()
@@ -346,14 +378,13 @@ extension SavedPaymentMethodsViewController: SavedPaymentMethodsCollectionViewCo
             // TODO: Add some boolean flag here to avoid making duplicate calls
             switch(paymentMethodSelection) {
             case .add:
-                mode = .addingNew
-                error = nil  // Clear any errors
-                if let intent = self.intent,
-                   !intent.isInTerminalState {
-                    initAddPaymentMethodViewController(intent: intent)
-                    self.updateUI()
-                } else {
-                    if let createSetupIntentHandler = self.configuration.createSetupIntentHandler {
+                error = nil
+                if let createSetupIntentHandler = self.configuration.createSetupIntentHandler {
+                    mode =  .addingNewWithSetupIntent
+                    if let intent = self.intent, !intent.isInTerminalState {
+                        initAddPaymentMethodViewController(intent: intent)
+                        self.updateUI()
+                    } else {
                         createSetupIntentHandler({ result in
                             guard let clientSecret = result else {
                                 self.configuration.delegate?.didError(.setupIntentClientSecretInvalid)
@@ -372,16 +403,11 @@ extension SavedPaymentMethodsViewController: SavedPaymentMethodsCollectionViewCo
                                 self.updateUI()
                             }
                         })
-                    } else {
-                    // Directly attach the PaymentMethod using the STPCustomerContext or user's API adapter.
-                    //                        TODO: The PaymentMethod must be available for us to do this. Create a PaymentMethod and attach it here.
-                    //                        self.configuration.customerContext.attachPaymentMethod(toCustomer: paymentMethod) { error in
-                    //                            if let error = error {
-                    //                                // TODO: Error for attaching payment method to customer
-                    //                                self.configuration.delegate?.didError(.unknown(debugDescription: "Implement this"))
-                    //                            }
-                    //                        }
                     }
+                } else {
+                    mode = .addingNewPaymentMethodAttachToCustomer
+                    self.initAddPaymentMethodViewController(intent: nil)
+                    self.updateUI()
                 }
             case .saved(let paymentMethod):
                 let displayData = SavedPaymentMethodsSheet.PaymentOptionSelection.PaymentOptionDisplayData(image: paymentMethod.makeIcon(),
@@ -390,14 +416,11 @@ extension SavedPaymentMethodsViewController: SavedPaymentMethodsCollectionViewCo
                 self.configuration.delegate?.didCloseWith(paymentOptionSelection: paymentOptionSelection)
                 self.delegate?.savedPaymentMethodsViewControllerDidFinish(self)
             case .applePay:
-//                let displayData =
-////                    .PaymentOptionDisplayData(image: Image.apple_pay_mark.makeImage().withRenderingMode(.alwaysOriginal),
-////                                                                                                           label: String.Localized.apple_pay)
                 self.configuration.delegate?.didCloseWith(paymentOptionSelection: SavedPaymentMethodsSheet.PaymentOptionSelection.applePay())
                 self.delegate?.savedPaymentMethodsViewControllerDidFinish(self)
             }
         }
-    private func initAddPaymentMethodViewController(intent: Intent) {
+    private func initAddPaymentMethodViewController(intent: Intent?) {
         self.addPaymentMethodViewController = SavedPaymentMethodsAddPaymentMethodViewController(
             intent: intent,
             configuration: self.configuration,

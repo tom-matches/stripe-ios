@@ -20,11 +20,11 @@ class SavedPaymentMethodsAddPaymentMethodViewController: UIViewController {
     // MARK: - Read-only Properties
     weak var delegate: SavedPaymentMethodsAddPaymentMethodViewControllerDelegate?
     lazy var paymentMethodTypes: [PaymentSheet.PaymentMethodType] = {
+        guard let intent = intent else {
+            return [.card]
+        }
         let paymentMethodTypes = PaymentSheet.PaymentMethodType.recommendedPaymentMethodTypes(from: intent)
             .filter { $0 == .card }
-        //        filteredPaymentMethodTypes(
-//            from: intent,
-//            configuration: configuration)
         assert(!paymentMethodTypes.isEmpty, "At least one payment method type must be available.")
         return paymentMethodTypes
     }()
@@ -40,7 +40,7 @@ class SavedPaymentMethodsAddPaymentMethodViewController: UIViewController {
         return nil
     }
     // MARK: - Writable Properties
-    private let intent: Intent
+    private let intent: Intent?
     private let configuration: SavedPaymentMethodsSheet.Configuration
 
     private lazy var paymentMethodFormElement: PaymentMethodElement = {
@@ -75,7 +75,7 @@ class SavedPaymentMethodsAddPaymentMethodViewController: UIViewController {
     }
 
     required init(
-        intent: Intent,
+        intent: Intent?,
         configuration: SavedPaymentMethodsSheet.Configuration,
         delegate: SavedPaymentMethodsAddPaymentMethodViewControllerDelegate
     ) {

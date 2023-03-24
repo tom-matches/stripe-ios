@@ -13,7 +13,7 @@ import UIKit
 class SavedPaymentMethodsFormFactory {
 
     let paymentMethod: PaymentSheet.PaymentMethodType
-    let intent: Intent
+    let intent: Intent?
     let configuration: SavedPaymentMethodsSheet.Configuration
     let addressSpecProvider: AddressSpecProvider
 
@@ -22,7 +22,7 @@ class SavedPaymentMethodsFormFactory {
     }
 
     init(
-        intent: Intent,
+        intent: Intent?,
         configuration: SavedPaymentMethodsSheet.Configuration,
         addressSpecProvider: AddressSpecProvider = .shared,
         paymentMethod: PaymentSheet.PaymentMethodType

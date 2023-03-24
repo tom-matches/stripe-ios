@@ -137,11 +137,13 @@ class SavedPaymentMethodSheetTestPlayground: UIViewController {
     func walletModeConfiguration(customerId: String, ephemeralKey: String) -> SavedPaymentMethodsSheet.Configuration {
         let customerContext = STPCustomerContext(customerId: customerId, ephemeralKeySecret: ephemeralKey)
         self.customerContext = customerContext
+        // To do: add switcher to allow with or without setup intent creation
+//        let createSetupIntentHandler = { completionBlock in
+//            self.backend.createSetupIntent(customerId: customerId,
+//                                           completion: completionBlock)
+//        }
         var configuration = SavedPaymentMethodsSheet.Configuration(customerContext: customerContext,
-                                                                   createSetupIntentHandler: { completionBlock in
-            self.backend.createSetupIntent(customerId: customerId,
-                                           completion: completionBlock)
-        })
+                                                                   createSetupIntentHandler: nil)//createSetupIntentHandler)
         //TODO: Add configuration to enable/disable apple pay support
         configuration.applePay = .init(merchantId: "com.foo.example", merchantCountryCode: "US")
         

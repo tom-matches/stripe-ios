@@ -198,11 +198,8 @@ extension SavedPaymentMethodSheetTestPlayground {
 extension SavedPaymentMethodSheetTestPlayground: SavedPaymentMethodsSheetDelegate {
     func didCloseWith(paymentOptionSelection: SavedPaymentMethodsSheet.PaymentOptionSelection?) {
         self.paymentOptionSelection = paymentOptionSelection
-        guard let paymentOptionSelection = paymentOptionSelection else {
-            updateButtons()
-            return
-        }
-        self.customerContext?.setSelectedPaymentMethodOption(persistableValue: paymentOptionSelection.persistableValue(), completion: { error in
+        let persistableValue = paymentOptionSelection?.persistableValue() ?? ""
+        self.customerContext?.setSelectedPaymentMethodOption(persistableValue: persistableValue, completion: { error in
             self.updateButtons()
         })
     }

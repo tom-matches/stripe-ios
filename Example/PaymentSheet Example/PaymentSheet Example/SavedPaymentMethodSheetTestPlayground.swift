@@ -19,22 +19,23 @@ class SavedPaymentMethodSheetTestPlayground: UIViewController {
     static let endpointSelectorEndpoint = "https://stripe-mobile-payment-sheet-test-playground-v6.glitch.me/endpoints"
     static let defaultSavedPaymentMethodEndpoint = "https://pool-seen-sandal.glitch.me"
     //"https://stripe-mobile-payment-sheet-test-playground-v6.glitch.me/saved_payment_method"
-
+    
     static var paymentSheetPlaygroundSettings: SavedPaymentMethodSheetPlaygroundSettings?
-
+    
     // Configuration
     @IBOutlet weak var customerModeSelector: UISegmentedControl!
     @IBOutlet weak var shippingInfoSelector: UISegmentedControl!
     @IBOutlet weak var loadButton: UIButton!
     @IBOutlet weak var selectingSavedCustomHeaderTextField: UITextField!
-
+    
     @IBOutlet weak var pmModeSelector: UISegmentedControl!
+    @IBOutlet weak var applePaySelector: UISegmentedControl!
     @IBOutlet weak var selectPaymentMethodImage: UIImageView!
     @IBOutlet weak var selectPaymentMethodButton: UIButton!
-
+    
     var savedPaymentMethodsSheet: SavedPaymentMethodsSheet?
     var paymentOptionSelection: SavedPaymentMethodsSheet.PaymentOptionSelection?
-
+    
     enum CustomerMode: String, CaseIterable {
         case new
         case returning
@@ -44,13 +45,13 @@ class SavedPaymentMethodSheetTestPlayground: UIViewController {
         case setupIntent
         case createAndAttach
     }
-
+    
     enum ShippingMode {
         case on
         case onWithDefaults
         case off
     }
-
+    
     var customerMode: CustomerMode {
         switch customerModeSelector.selectedSegmentIndex {
         case 0:
@@ -68,15 +69,15 @@ class SavedPaymentMethodSheetTestPlayground: UIViewController {
             return .createAndAttach
         }
     }
-
+    
     var backend: SavedPaymentMethodsBackend!
-
+    
     var ephemeralKey: String?
     var customerId: String?
     var customerContext: STPCustomerContext?
     var savedPaymentMethodEndpoint: String = defaultSavedPaymentMethodEndpoint
     var appearance = PaymentSheet.Appearance.default
-
+    
     func makeAlertController() -> UIAlertController {
         let alertController = UIAlertController(
             title: "Complete", message: "Completed", preferredStyle: .alert)
@@ -86,15 +87,15 @@ class SavedPaymentMethodSheetTestPlayground: UIViewController {
         alertController.addAction(OKAction)
         return alertController
     }
-
+    
     override func viewDidLoad() {
         super.viewDidLoad()
         loadButton.addTarget(self, action: #selector(load), for: .touchUpInside)
-
+        
         selectPaymentMethodButton.isEnabled = false
         selectPaymentMethodButton.addTarget(
             self, action: #selector(didTapSelectPaymentMethodButton), for: .touchUpInside)
-
+        
         if let paymentSheetPlaygroundSettings = SavedPaymentMethodSheetTestPlayground.paymentSheetPlaygroundSettings {
             loadSettingsFrom(settings: paymentSheetPlaygroundSettings)
         } else if let nsUserDefaultSettings = settingsFromDefaults() {
@@ -106,7 +107,7 @@ class SavedPaymentMethodSheetTestPlayground: UIViewController {
     func didTapSelectPaymentMethodButton() {
         savedPaymentMethodsSheet?.present(from: self)
     }
-
+    
     func updateButtons() {
         // Update the payment method selection button
         if let paymentOption = self.paymentOptionSelection {
@@ -120,27 +121,27 @@ class SavedPaymentMethodSheetTestPlayground: UIViewController {
         }
         self.selectPaymentMethodButton.setNeedsLayout()
     }
-
+    
     @IBAction func didTapEndpointConfiguration(_ sender: Any) {
         // Stubbed out for now
-//        let endpointSelector = EndpointSelectorViewController(delegate: self,
-//                                                              endpointSelectorEndpoint: Self.endpointSelectorEndpoint,
-//                                                              currentCheckoutEndpoint: sav)
-//        let navController = UINavigationController(rootViewController: endpointSelector)
-//        self.navigationController?.present(navController, animated: true, completion: nil)
+        //        let endpointSelector = EndpointSelectorViewController(delegate: self,
+        //                                                              endpointSelectorEndpoint: Self.endpointSelectorEndpoint,
+        //                                                              currentCheckoutEndpoint: sav)
+        //        let navController = UINavigationController(rootViewController: endpointSelector)
+        //        self.navigationController?.present(navController, animated: true, completion: nil)
     }
-
+    
     @IBAction func didTapResetConfig(_ sender: Any) {
         loadSettingsFrom(settings: SavedPaymentMethodSheetPlaygroundSettings.defaultValues())
     }
-
+    
     @IBAction func appearanceButtonTapped(_ sender: Any) {
         if #available(iOS 14.0, *) {
             let vc = UIHostingController(rootView: AppearancePlaygroundView(appearance: appearance, doneAction: { updatedAppearance in
                 self.appearance = updatedAppearance
                 self.dismiss(animated: true, completion: nil)
             }))
-
+            
             self.navigationController?.present(vc, animated: true, completion: nil)
         } else {
             let alert = UIAlertController(title: "Unavailable", message: "Appearance playground is only available in iOS 14+.", preferredStyle: UIAlertController.Style.alert)
@@ -148,20 +149,17 @@ class SavedPaymentMethodSheetTestPlayground: UIViewController {
             self.present(alert, animated: true, completion: nil)
         }
     }
-
-
+    
     func walletModeConfiguration(customerId: String, ephemeralKey: String) -> SavedPaymentMethodsSheet.Configuration {
         let customerContext = STPCustomerContext(customerId: customerId, ephemeralKeySecret: ephemeralKey)
         self.customerContext = customerContext
         var configuration = SavedPaymentMethodsSheet.Configuration(customerContext: customerContext,
                                                                    createSetupIntentHandler: setupIntentHandler(customerId: customerId))
-        //TODO: Add configuration to enable/disable apple pay support
-        configuration.applePay = .init(merchantId: "com.foo.example", merchantCountryCode: "US")
-        
+        configuration.applePay = applePayConfig()
         configuration.appearance = appearance
         configuration.delegate = self
         configuration.selectingSavedCustomHeaderText = selectingSavedCustomHeaderTextField.text
-
+        
         return configuration
     }
     func setupIntentHandler(customerId: String) -> SavedPaymentMethodsSheet.Configuration.CreateSetupIntentHandlerCallback? {
@@ -175,7 +173,14 @@ class SavedPaymentMethodSheetTestPlayground: UIViewController {
             return nil
         }
     }
-    
+    func applePayConfig() -> SavedPaymentMethodsSheet.ApplePayConfiguration? {
+        switch(applePaySelector.selectedSegmentIndex) {
+        case 0:
+            return .init(merchantId: "com.foo.example", merchantCountryCode: "US")
+        default:
+            return nil
+        }
+    }
 }
 
 // MARK: - Backend
@@ -251,6 +256,7 @@ struct SavedPaymentMethodSheetPlaygroundSettings: Codable {
 
     let customerModeSelectorValue: Int
     let paymentMethodModeSelectorValue: Int
+    let applePaySelectorSelectorValue: Int
     let selectingSavedCustomHeaderText: String?
     let savedPaymentMethodEndpoint: String?
 
@@ -258,6 +264,7 @@ struct SavedPaymentMethodSheetPlaygroundSettings: Codable {
         return SavedPaymentMethodSheetPlaygroundSettings(
             customerModeSelectorValue: 0,
             paymentMethodModeSelectorValue: 0,
+            applePaySelectorSelectorValue: 0,
             selectingSavedCustomHeaderText: nil,
             savedPaymentMethodEndpoint: SavedPaymentMethodSheetTestPlayground.defaultSavedPaymentMethodEndpoint
         )
@@ -285,6 +292,7 @@ extension SavedPaymentMethodSheetTestPlayground {
         let settings = SavedPaymentMethodSheetPlaygroundSettings(
             customerModeSelectorValue: customerModeSelector.selectedSegmentIndex,
             paymentMethodModeSelectorValue: pmModeSelector.selectedSegmentIndex,
+            applePaySelectorSelectorValue: applePaySelector.selectedSegmentIndex,
             selectingSavedCustomHeaderText: selectingSavedCustomHeaderTextField.text,
             savedPaymentMethodEndpoint: savedPaymentMethodEndpoint
         )
@@ -307,7 +315,7 @@ extension SavedPaymentMethodSheetTestPlayground {
     func loadSettingsFrom(settings: SavedPaymentMethodSheetPlaygroundSettings) {
         customerModeSelector.selectedSegmentIndex = settings.customerModeSelectorValue
         pmModeSelector.selectedSegmentIndex = settings.paymentMethodModeSelectorValue
-
+        applePaySelector.selectedSegmentIndex = settings.applePaySelectorSelectorValue
         selectingSavedCustomHeaderTextField.text = settings.selectingSavedCustomHeaderText
         savedPaymentMethodEndpoint = settings.savedPaymentMethodEndpoint ?? SavedPaymentMethodSheetTestPlayground.defaultSavedPaymentMethodEndpoint
     }

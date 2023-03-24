@@ -218,6 +218,9 @@ extension SavedPaymentMethodSheetTestPlayground: SavedPaymentMethodsSheetDelegat
             print("something went wrong: \(error)")
         }
     }
+    func didDetachPaymentMethod(paymentOptionSelection: SavedPaymentMethodsSheet.PaymentOptionSelection) {
+        print("detached payment option: \(paymentOptionSelection.displayData().label)")
+    }
 }
 
 struct SavedPaymentMethodSheetPlaygroundSettings: Codable {

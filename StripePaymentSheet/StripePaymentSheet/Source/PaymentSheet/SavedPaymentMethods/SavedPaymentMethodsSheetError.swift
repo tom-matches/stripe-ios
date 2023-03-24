@@ -22,6 +22,9 @@ public enum SavedPaymentMethodsSheetError: Error {
 
     /// Unable to attach a payment method to the customer
     case attachPaymentMethod(Error)
+
+    /// Unable to detach a payment method to the customer
+    case detachPaymentMethod(Error)
     
     /// An unknown error.
     case unknown(debugDescription: String)

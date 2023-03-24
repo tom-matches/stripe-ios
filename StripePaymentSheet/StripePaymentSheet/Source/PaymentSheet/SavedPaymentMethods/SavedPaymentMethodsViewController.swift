@@ -430,7 +430,17 @@ extension SavedPaymentMethodsViewController: SavedPaymentMethodsCollectionViewCo
     func didSelectRemove(
         viewController: SavedPaymentMethodsCollectionViewController,
         paymentMethodSelection: SavedPaymentMethodsCollectionViewController.Selection) {
-            //todo
+            guard case .saved(let paymentMethod) = paymentMethodSelection else {
+                return
+            }
+            configuration.customerContext.detachPaymentMethod?(fromCustomer: paymentMethod, completion: { error in
+                if let error = error {
+                    self.configuration.delegate?.didError(.detachPaymentMethod(error))
+                    return
+                }
+                let removedPaymentOption = SavedPaymentMethodsSheet.PaymentOptionSelection.savedPaymentMethod(paymentMethod)
+                self.configuration.delegate?.didDetachPaymentMethod(paymentOptionSelection: removedPaymentOption)
+            })
         }
 }
 

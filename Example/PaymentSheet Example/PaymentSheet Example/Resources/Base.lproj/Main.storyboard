@@ -1278,7 +1278,7 @@
                                 <rect key="frame" x="0.0" y="92" width="414" height="770"/>
                                 <subviews>
                                     <stackView opaque="NO" contentMode="scaleToFill" misplaced="YES" layoutMarginsFollowReadableWidth="YES" axis="vertical" alignment="top" spacing="4" translatesAutoresizingMaskIntoConstraints="NO" id="oT4-30-daT" userLabel="Configuration Stack View">
-                                        <rect key="frame" x="7" y="8" width="414" height="132"/>
+                                        <rect key="frame" x="7" y="8" width="414" height="146"/>
                                         <subviews>
                                             <stackView opaque="NO" contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="3lu-aI-EYq">
                                                 <rect key="frame" x="0.0" y="0.0" width="353.5" height="34.5"/>
@@ -1308,17 +1308,17 @@
                                                 </subviews>
                                             </stackView>
                                             <stackView opaque="NO" contentMode="scaleToFill" verticalHuggingPriority="1000" verticalCompressionResistancePriority="1000" spacing="8" id="U04-zF-D3H">
-                                                <rect key="frame" x="0.0" y="38.5" width="236" height="31"/>
+                                                <rect key="frame" x="0.0" y="38.5" width="236" height="20.5"/>
                                                 <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
                                                 <subviews>
                                                     <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Customer" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="4HF-xe-ZuF">
-                                                        <rect key="frame" x="0.0" y="0.0" width="75" height="31"/>
+                                                        <rect key="frame" x="0.0" y="0.0" width="75" height="20.5"/>
                                                         <fontDescription key="fontDescription" type="system" pointSize="17"/>
                                                         <nil key="textColor"/>
                                                         <nil key="highlightedColor"/>
                                                     </label>
                                                     <segmentedControl opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="left" contentVerticalAlignment="top" segmentControlStyle="plain" selectedSegmentIndex="0" translatesAutoresizingMaskIntoConstraints="NO" id="2Vd-pa-aIT">
-                                                        <rect key="frame" x="83" y="0.0" width="153" height="32"/>
+                                                        <rect key="frame" x="83" y="0.0" width="153" height="21.5"/>
                                                         <segments>
                                                             <segment title="new"/>
                                                             <segment title="returning"/>
@@ -1329,14 +1329,36 @@
                                                     </segmentedControl>
                                                 </subviews>
                                             </stackView>
+                                            <stackView opaque="NO" contentMode="scaleToFill" verticalHuggingPriority="1000" verticalCompressionResistancePriority="1000" spacing="8" id="nFM-bK-AdH">
+                                                <rect key="frame" x="0.0" y="63" width="327.5" height="20.5"/>
+                                                <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
+                                                <subviews>
+                                                    <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="PM Mode" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="6gf-bi-T5d">
+                                                        <rect key="frame" x="0.0" y="0.0" width="72.5" height="20.5"/>
+                                                        <fontDescription key="fontDescription" type="system" pointSize="17"/>
+                                                        <nil key="textColor"/>
+                                                        <nil key="highlightedColor"/>
+                                                    </label>
+                                                    <segmentedControl opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="left" contentVerticalAlignment="top" segmentControlStyle="plain" selectedSegmentIndex="0" translatesAutoresizingMaskIntoConstraints="NO" id="9c4-tL-yJF">
+                                                        <rect key="frame" x="80.5" y="0.0" width="247" height="21.5"/>
+                                                        <segments>
+                                                            <segment title="setupIntent"/>
+                                                            <segment title="createAndAttach"/>
+                                                        </segments>
+                                                        <userDefinedRuntimeAttributes>
+                                                            <userDefinedRuntimeAttribute type="string" keyPath="accessibilityIdentifier" value="customer_mode_selector"/>
+                                                        </userDefinedRuntimeAttributes>
+                                                    </segmentedControl>
+                                                </subviews>
+                                            </stackView>
                                             <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Client configuration" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="QUg-My-mSY">
-                                                <rect key="frame" x="0.0" y="73.5" width="157" height="20.5"/>
+                                                <rect key="frame" x="0.0" y="87.5" width="157" height="20.5"/>
                                                 <fontDescription key="fontDescription" style="UICTFontTextStyleHeadline"/>
                                                 <nil key="textColor"/>
                                                 <nil key="highlightedColor"/>
                                             </label>
                                             <stackView opaque="NO" contentMode="scaleToFill" spacing="8" translatesAutoresizingMaskIntoConstraints="NO" id="pzj-Q4-wIU">
-                                                <rect key="frame" x="0.0" y="98" width="414" height="34"/>
+                                                <rect key="frame" x="0.0" y="112" width="414" height="34"/>
                                                 <subviews>
                                                     <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="selectingSavedCustomHeader" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="TVH-PB-HfA">
                                                         <rect key="frame" x="0.0" y="0.0" width="206" height="34"/>
@@ -1357,7 +1379,7 @@
                                         </subviews>
                                     </stackView>
                                     <stackView opaque="NO" contentMode="scaleToFill" layoutMarginsFollowReadableWidth="YES" axis="vertical" spacing="10" translatesAutoresizingMaskIntoConstraints="NO" id="o6M-Kc-5Uy" userLabel="Other Stack View">
-                                        <rect key="frame" x="1" y="148" width="413" height="131.5"/>
+                                        <rect key="frame" x="1" y="162" width="413" height="131.5"/>
                                         <subviews>
                                             <button opaque="NO" contentMode="scaleToFill" verticalHuggingPriority="252" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="system" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="3f9-n9-9kT">
                                                 <rect key="frame" x="0.0" y="0.0" width="413" height="30"/>
@@ -1456,8 +1478,9 @@
                     </navigationItem>
                     <simulatedNavigationBarMetrics key="simulatedTopBarMetrics" prompted="NO"/>
                     <connections>
-                        <outlet property="customerModeSelector" destination="2Vd-pa-aIT" id="Lf1-sR-saX"/>
+                        <outlet property="customerModeSelector" destination="2Vd-pa-aIT" id="Chy-tC-AUQ"/>
                         <outlet property="loadButton" destination="3f9-n9-9kT" id="cv5-sM-Bg0"/>
+                        <outlet property="pmModeSelector" destination="9c4-tL-yJF" id="miT-ok-QqG"/>
                         <outlet property="selectPaymentMethodButton" destination="GAy-49-G6S" id="Zcp-iu-QV1"/>
                         <outlet property="selectPaymentMethodImage" destination="QfH-VD-fjE" id="E8P-OV-p2T"/>
                         <outlet property="selectingSavedCustomHeaderTextField" destination="hfU-cq-qwZ" id="2oS-6t-nn5"/>

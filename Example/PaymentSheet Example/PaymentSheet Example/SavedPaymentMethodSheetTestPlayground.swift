@@ -28,6 +28,7 @@ class SavedPaymentMethodSheetTestPlayground: UIViewController {
     @IBOutlet weak var loadButton: UIButton!
     @IBOutlet weak var selectingSavedCustomHeaderTextField: UITextField!
 
+    @IBOutlet weak var pmModeSelector: UISegmentedControl!
     @IBOutlet weak var selectPaymentMethodImage: UIImageView!
     @IBOutlet weak var selectPaymentMethodButton: UIButton!
 
@@ -37,6 +38,11 @@ class SavedPaymentMethodSheetTestPlayground: UIViewController {
     enum CustomerMode: String, CaseIterable {
         case new
         case returning
+    }
+    
+    enum PaymentMethodMode {
+        case setupIntent
+        case createAndAttach
     }
 
     enum ShippingMode {
@@ -51,6 +57,15 @@ class SavedPaymentMethodSheetTestPlayground: UIViewController {
             return .new
         default:
             return .returning
+        }
+    }
+    
+    var paymentMethodMode: PaymentMethodMode {
+        switch pmModeSelector.selectedSegmentIndex {
+        case 0:
+            return .setupIntent
+        default:
+            return .createAndAttach
         }
     }
 
@@ -134,16 +149,12 @@ class SavedPaymentMethodSheetTestPlayground: UIViewController {
         }
     }
 
+
     func walletModeConfiguration(customerId: String, ephemeralKey: String) -> SavedPaymentMethodsSheet.Configuration {
         let customerContext = STPCustomerContext(customerId: customerId, ephemeralKeySecret: ephemeralKey)
         self.customerContext = customerContext
-        // To do: add switcher to allow with or without setup intent creation
-//        let createSetupIntentHandler = { completionBlock in
-//            self.backend.createSetupIntent(customerId: customerId,
-//                                           completion: completionBlock)
-//        }
         var configuration = SavedPaymentMethodsSheet.Configuration(customerContext: customerContext,
-                                                                   createSetupIntentHandler: nil)//createSetupIntentHandler)
+                                                                   createSetupIntentHandler: setupIntentHandler(customerId: customerId))
         //TODO: Add configuration to enable/disable apple pay support
         configuration.applePay = .init(merchantId: "com.foo.example", merchantCountryCode: "US")
         
@@ -153,6 +164,18 @@ class SavedPaymentMethodSheetTestPlayground: UIViewController {
 
         return configuration
     }
+    func setupIntentHandler(customerId: String) -> SavedPaymentMethodsSheet.Configuration.CreateSetupIntentHandlerCallback? {
+        switch(paymentMethodMode) {
+        case .setupIntent:
+            return { completionBlock in
+                self.backend.createSetupIntent(customerId: customerId,
+                                               completion: completionBlock)
+            }
+        case .createAndAttach:
+            return nil
+        }
+    }
+    
 }
 
 // MARK: - Backend
@@ -227,13 +250,14 @@ struct SavedPaymentMethodSheetPlaygroundSettings: Codable {
     static let nsUserDefaultsKey = "savedPaymentMethodPlaygroundSettings"
 
     let customerModeSelectorValue: Int
-
+    let paymentMethodModeSelectorValue: Int
     let selectingSavedCustomHeaderText: String?
     let savedPaymentMethodEndpoint: String?
 
     static func defaultValues() -> SavedPaymentMethodSheetPlaygroundSettings {
         return SavedPaymentMethodSheetPlaygroundSettings(
             customerModeSelectorValue: 0,
+            paymentMethodModeSelectorValue: 0,
             selectingSavedCustomHeaderText: nil,
             savedPaymentMethodEndpoint: SavedPaymentMethodSheetTestPlayground.defaultSavedPaymentMethodEndpoint
         )
@@ -260,6 +284,7 @@ extension SavedPaymentMethodSheetTestPlayground {
     func serializeSettingsToNSUserDefaults() {
         let settings = SavedPaymentMethodSheetPlaygroundSettings(
             customerModeSelectorValue: customerModeSelector.selectedSegmentIndex,
+            paymentMethodModeSelectorValue: pmModeSelector.selectedSegmentIndex,
             selectingSavedCustomHeaderText: selectingSavedCustomHeaderTextField.text,
             savedPaymentMethodEndpoint: savedPaymentMethodEndpoint
         )
@@ -281,6 +306,7 @@ extension SavedPaymentMethodSheetTestPlayground {
 
     func loadSettingsFrom(settings: SavedPaymentMethodSheetPlaygroundSettings) {
         customerModeSelector.selectedSegmentIndex = settings.customerModeSelectorValue
+        pmModeSelector.selectedSegmentIndex = settings.paymentMethodModeSelectorValue
 
         selectingSavedCustomHeaderTextField.text = settings.selectingSavedCustomHeaderText
         savedPaymentMethodEndpoint = settings.savedPaymentMethodEndpoint ?? SavedPaymentMethodSheetTestPlayground.defaultSavedPaymentMethodEndpoint

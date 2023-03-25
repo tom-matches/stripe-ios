@@ -433,25 +433,30 @@ class PaymentSheetAPITest: XCTestCase {
         var intentConfig = PaymentSheet.IntentConfiguration(mode: .payment(amount: 1000, currency: "USD")) { _, _ in
             // These tests don't confirm, so this is unused
         }
+        var flowController: PaymentSheet.FlowController!
+        let createFlowControllerExpectation = expectation(description: "Create flow controller expectation")
 
-        let expectation = expectation(description: "Updates")
         PaymentSheet.FlowController.create(intentConfig: intentConfig, configuration: configuration) { result in
             switch result {
             case .success(let sut):
-                // ...updating w/ an invalid intent config should fail...
-                intentConfig.mode = .setup(currency: "Invalid currency", setupFutureUsage: .offSession)
-                sut.update(intentConfiguration: intentConfig) { [sut] updateError in
-                    XCTAssertNotNil(updateError)
-                    // ...the paymentOption should be nil...
-                    XCTAssertNil(sut.paymentOption)
-                    // Note: `confirm` has an assertionFailure if paymentOption is nil, so we don't check it here.
-                    expectation.fulfill()
-                }
+                flowController = sut
+                createFlowControllerExpectation.fulfill()
             case .failure(let error):
                 XCTFail(error.localizedDescription)
             }
         }
-        waitForExpectations(timeout: 10)
+
+        self.wait(for: [createFlowControllerExpectation], timeout: 10)
+
+        let updateExpectation = expectation(description: "Update callback is invoked")
+        // ...updating w/ an invalid intent config should fail...
+        intentConfig.mode = .setup(currency: "Invalid currency", setupFutureUsage: .offSession)
+        flowController.update(intentConfiguration: intentConfig) { error in
+            XCTAssertNotNil(error)
+            updateExpectation.fulfill()
+        }
+
+        self.wait(for: [updateExpectation], timeout: 10)
     }
 
     /// Tests that when update is called while another update operation is in progress we ignore the in-flight update

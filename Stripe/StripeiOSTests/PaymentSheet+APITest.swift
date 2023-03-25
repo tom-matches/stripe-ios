@@ -453,6 +453,8 @@ class PaymentSheetAPITest: XCTestCase {
         intentConfig.mode = .setup(currency: "Invalid currency", setupFutureUsage: .offSession)
         flowController.update(intentConfiguration: intentConfig) { error in
             XCTAssertNotNil(error)
+            // ...the paymentOption should be nil...
+            XCTAssertNil(flowController.paymentOption)
             updateExpectation.fulfill()
         }
 

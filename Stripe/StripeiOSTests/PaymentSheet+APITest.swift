@@ -429,7 +429,7 @@ class PaymentSheetAPITest: XCTestCase {
         wait(for: [updateExpectation], timeout: 10)
     }
 
-    func testUpdateFails() {
+    func testUpdateFailsRenamed() {
         var intentConfig = PaymentSheet.IntentConfiguration(mode: .payment(amount: 1000, currency: "USD")) { _, _ in
             // These tests don't confirm, so this is unused
         }

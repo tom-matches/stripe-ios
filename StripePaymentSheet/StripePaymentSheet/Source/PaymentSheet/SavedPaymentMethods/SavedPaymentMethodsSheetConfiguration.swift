@@ -43,6 +43,10 @@ extension SavedPaymentMethodsSheet {
 
         public weak var delegate: SavedPaymentMethodsSheetDelegate?
 
+        /// A URL that redirects back to your app that PaymentSheet can use to auto-dismiss
+        /// web views used for additional authentication, e.g. 3DS2
+        public var returnURL: String?
+ 
         /// The APIClient instance used to make requests to Stripe
         public var apiClient: STPAPIClient = STPAPIClient.shared
 

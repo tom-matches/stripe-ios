@@ -157,6 +157,7 @@ class SavedPaymentMethodSheetTestPlayground: UIViewController {
                                                                    createSetupIntentHandler: setupIntentHandler(customerId: customerId))
         configuration.applePay = applePayConfig()
         configuration.appearance = appearance
+        configuration.returnURL = "payments-example://stripe-redirect"
         configuration.delegate = self
         configuration.selectingSavedCustomHeaderText = selectingSavedCustomHeaderTextField.text
         

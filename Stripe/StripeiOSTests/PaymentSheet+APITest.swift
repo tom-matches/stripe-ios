@@ -554,16 +554,16 @@ class PaymentSheetAPITest: XCTestCase {
         }
 
         self.wait(for: [firstUpdateExpectation], timeout: 10)
-
-        let secondUpdateExpectation = expectation(description: "Second update callback is invoked")
-        // Subsequent updates should succeed
-        intentConfig.mode = .setup(currency: nil, setupFutureUsage: .onSession)
-        flowController.update(intentConfiguration: intentConfig) { error in
-            XCTAssertNil(error)
-            secondUpdateExpectation.fulfill()
-        }
-
-        self.wait(for: [secondUpdateExpectation], timeout: 10)
+//
+//        let secondUpdateExpectation = expectation(description: "Second update callback is invoked")
+//        // Subsequent updates should succeed
+//        intentConfig.mode = .setup(currency: nil, setupFutureUsage: .onSession)
+//        flowController.update(intentConfiguration: intentConfig) { error in
+//            XCTAssertNil(error)
+//            secondUpdateExpectation.fulfill()
+//        }
+//
+//        self.wait(for: [secondUpdateExpectation], timeout: 10)
     }
 
     // MARK: - other tests

@@ -11,6 +11,9 @@ import Foundation
 import UIKit
 
 protocol SavedPaymentMethodsViewControllerDelegate: AnyObject {
+    func savedPaymentMethodsViewControllerShouldConfirm(_ savedPaymentMethodsViewController: SavedPaymentMethodsViewController,
+    with paymentOption: PaymentOption,
+completion: @escaping(SavedPaymentMethodsSheetResult) -> Void)
     func savedPaymentMethodsViewControllerDidCancel(_ savedPaymentMethodsViewController: SavedPaymentMethodsViewController)
     func savedPaymentMethodsViewControllerDidFinish(_ savedPaymentMethodsViewController: SavedPaymentMethodsViewController)
 }
@@ -34,7 +37,7 @@ class SavedPaymentMethodsViewController: UIViewController {
 
     private var mode: Mode
     private(set) var error: Error?
-    private var intent: Intent?
+    private(set) var intent: Intent?
     private var addPaymentMethodViewController: SavedPaymentMethodsAddPaymentMethodViewController?
 
     var selectedPaymentOption: PaymentOption? {
@@ -257,7 +260,31 @@ class SavedPaymentMethodsViewController: UIViewController {
 
     }
     private func addPaymentOption(paymentOption: PaymentOption) {
-        print("stubbed out -- using setup intent")
+        guard case .new(let confirmParams) = paymentOption else {
+            return
+        }
+        self.delegate?.savedPaymentMethodsViewControllerShouldConfirm(self, with: paymentOption, completion: { result in
+            print("addPaymentOption completion block\(confirmParams)")
+            switch(result) {
+            case .canceled:
+                self.updateUI()
+            case .failed(let error):
+                print(error)
+            case .completed(let intent):
+                self.actionButton.update(state: .succeeded, animated: true) {
+                    guard let intent = intent as? STPSetupIntent,
+                          let paymentMethod = intent.paymentMethod else {
+                        //TODO: error!?! or maybe just make our type system more strict
+                        self.updateUI()
+                        return
+                    }
+                    let paymentOptionSelection = SavedPaymentMethodsSheet.PaymentOptionSelection.newPaymentMethod(paymentMethod)
+                    self.configuration.delegate?.didCloseWith(paymentOptionSelection: paymentOptionSelection)
+                    self.delegate?.savedPaymentMethodsViewControllerDidFinish(self)
+                }
+            }
+        })
+        //print(confirmparmas)
     }
     private func addPaymentOptionToCustomer(paymentOption: PaymentOption) {
         if case .new(let confirmParams) = paymentOption  {

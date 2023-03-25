@@ -12,6 +12,22 @@ import UIKit
 @_spi(STP) import StripePaymentsUI
 @_spi(STP) import StripeUICore
 
+@frozen public enum SavedPaymentMethodsSheetResult {
+    /// The customer completed the payment or setup
+    /// - Note: The payment may still be processing at this point; don't assume money has successfully moved.
+    ///
+    /// Your app should transition to a generic receipt view (e.g. a screen that displays "Your order is confirmed!"), and
+    /// fulfill the order (e.g. ship the product to the customer) after receiving a successful payment event from Stripe -
+    /// see https://stripe.com/docs/payments/handling-payment-events
+    case completed(NSObject?)
+
+    case canceled
+    
+    /// The attempt failed.
+    /// - Parameter error: The error encountered by the customer. You can display its `localizedDescription` to the customer.
+    case failed(error: Error)
+}
+
 public class SavedPaymentMethodsSheet {
     let configuration: SavedPaymentMethodsSheet.Configuration
 
@@ -134,7 +150,58 @@ extension SavedPaymentMethodsSheet {
 
 }
 
+@available(iOSApplicationExtension, unavailable)
+@available(macCatalystApplicationExtension, unavailable)
 extension SavedPaymentMethodsSheet: SavedPaymentMethodsViewControllerDelegate {
+    func savedPaymentMethodsViewControllerShouldConfirm(_ savedPaymentMethodsViewController: SavedPaymentMethodsViewController, with paymentOption: PaymentOption, completion: @escaping (SavedPaymentMethodsSheetResult) -> Void) {
+        guard let intent = savedPaymentMethodsViewController.intent else {
+            assert(false, "Payment intent not available")
+            completion(.failed(error: SavedPaymentMethodsSheetError.unknown(debugDescription: "No payment intent available")))
+        }
+        let presentingViewController = savedPaymentMethodsViewController.presentingViewController
+
+        let confirm: (@escaping (SavedPaymentMethodsSheetResult) -> Void) -> Void = { completion in
+//            SavedPaymentMethodsSheet.confirm(
+//                configuration: self.configuration,
+//                authenticationContext: self.bottomSheetViewController,
+//                intent: savedPaymentMethodsViewController.intent //paymentSheetViewController.intent,
+//                paymentOption: paymentOption,
+//                paymentHandler: self.paymentHandler)
+//            { result in
+//                if case let .failed(error) = result {
+//                    self.mostRecentError = error
+//                }
+//                completion(result)
+//            }
+            self.confirmIntent(intent: intent, paymentOption: paymentOption) { result in
+                if case let .failed(error) = result {
+                    print(error)
+//                    self.mostRecentError = error
+                }
+                completion(result)
+            }
+        }
+        
+        if case .applePay = paymentOption {
+            savedPaymentMethodsViewController.dismiss(animated: true) {
+                confirm { result in
+                    if case .completed = result {
+                        //TODO: Communicate back that they used apple pay and
+                        // send back the PMid back to the caller --here?
+                    } else {
+                        presentingViewController?.presentAsBottomSheet(self.bottomSheetViewController, appearance: self.configuration.appearance)
+                    }
+                    completion(result)
+                    
+                }
+            }
+        } else {
+            confirm { result in
+                completion(result)
+            }
+        }
+    }
+    
     func savedPaymentMethodsViewControllerDidCancel(_ savedPaymentMethodsViewController: SavedPaymentMethodsViewController) {
         savedPaymentMethodsViewController.dismiss(animated: true) {
             self.completion?()

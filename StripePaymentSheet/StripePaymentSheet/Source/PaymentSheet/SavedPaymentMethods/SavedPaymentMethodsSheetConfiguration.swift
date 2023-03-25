@@ -89,12 +89,17 @@ extension SavedPaymentMethodsSheet {
         }
         case applePay(paymentOptionDisplayData: PaymentOptionDisplayData)
         case saved(paymentMethod: STPPaymentMethod, paymentOptionDisplayData: PaymentOptionDisplayData)
-        //new
-        
+        case new(paymentMethod: STPPaymentMethod, paymentOptionDisplayData: PaymentOptionDisplayData)
+
         public static func savedPaymentMethod(_ paymentMethod: STPPaymentMethod) -> PaymentOptionSelection {
             let data = PaymentOptionDisplayData(image: paymentMethod.makeIcon(), label: paymentMethod.paymentSheetLabel)
             return .saved(paymentMethod: paymentMethod, paymentOptionDisplayData: data)
         }
+        public static func newPaymentMethod(_ paymentMethod: STPPaymentMethod) -> PaymentOptionSelection {
+            let data = PaymentOptionDisplayData(image: paymentMethod.makeIcon(), label: paymentMethod.paymentSheetLabel)
+            return .new(paymentMethod: paymentMethod, paymentOptionDisplayData: data)
+        }
+
         public static func applePay() -> PaymentOptionSelection {
             let displayData = SavedPaymentMethodsSheet.PaymentOptionSelection.PaymentOptionDisplayData(image: Image.apple_pay_mark.makeImage().withRenderingMode(.alwaysOriginal),
                                                                                                        label: String.Localized.apple_pay)
@@ -107,6 +112,8 @@ extension SavedPaymentMethodsSheet {
                 return paymentOptionDisplayData
             case .saved(_, let paymentOptionDisplayData):
                 return paymentOptionDisplayData
+            case .new(_, let paymentOptionDisplayData):
+                return paymentOptionDisplayData
             }
         }
         
@@ -115,6 +122,8 @@ extension SavedPaymentMethodsSheet {
             case .applePay:
                 return DefaultPaymentMethodStore.PaymentMethodIdentifier.applePay.value
             case .saved(let paymentMethod, _):
+                return paymentMethod.stripeId
+            case .new(let paymentMethod, _):
                 return paymentMethod.stripeId
             }
         }

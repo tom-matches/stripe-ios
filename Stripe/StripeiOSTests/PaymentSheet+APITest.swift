@@ -440,7 +440,7 @@ class PaymentSheetAPITest: XCTestCase {
             case .success(let sut):
                 // ...updating w/ an invalid intent config should fail...
                 intentConfig.mode = .setup(currency: "Invalid currency", setupFutureUsage: .offSession)
-                sut.update(intentConfiguration: intentConfig) { updateError in
+                sut.update(intentConfiguration: intentConfig) { [sut] updateError in
                     XCTAssertNotNil(updateError)
                     // ...the paymentOption should be nil...
                     XCTAssertNil(sut.paymentOption)

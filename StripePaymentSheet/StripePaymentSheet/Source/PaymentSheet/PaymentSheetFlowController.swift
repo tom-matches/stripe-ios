@@ -334,8 +334,8 @@ extension PaymentSheet {
         func update(intentConfiguration: IntentConfiguration, completion: @escaping (Error?) -> Void) {
             assert(Thread.isMainThread, "PaymentSheet.FlowController.update must be called from the main thread.")
 
-            let updateID = UUID()
-            latestUpdateContext = UpdateContext(id: updateID)
+//            let updateID = UUID()
+//            latestUpdateContext = UpdateContext(id: updateID)
 
             // 1. Load the intent, payment methods, and link data from the Stripe API
             PaymentSheet.load(
@@ -348,9 +348,9 @@ extension PaymentSheet {
                 }
 
                 // If this update is not the latest, ignore the result and don't invoke completion block and exit early
-                guard updateID == self.latestUpdateContext?.id else {
-                    return
-                }
+//                guard updateID == self.latestUpdateContext?.id else {
+//                    return
+//                }
 
                 switch loadResult {
                 case .success(let intent, let paymentMethods, let isLinkEnabled):
@@ -365,7 +365,7 @@ extension PaymentSheet {
                     self.latestUpdateContext?.status = .completed
                     completion(nil)
                 case .failure(let error):
-                    self.latestUpdateContext?.status = .failed
+//                    self.latestUpdateContext?.status = .failed
                     completion(error)
                 }
             }

@@ -451,10 +451,10 @@ class PaymentSheetAPITest: XCTestCase {
         let updateExpectation = expectation(description: "Update callback is invoked")
         // ...updating w/ an invalid intent config should fail...
         intentConfig.mode = .setup(currency: "Invalid currency", setupFutureUsage: .offSession)
-        flowController.update(intentConfiguration: intentConfig) { error in
+        flowController.update(intentConfiguration: intentConfig) { [flowController] error in
             XCTAssertNotNil(error)
             // ...the paymentOption should be nil...
-            XCTAssertNil(flowController.paymentOption)
+            XCTAssertNil(flowController?.paymentOption)
             updateExpectation.fulfill()
         }
 

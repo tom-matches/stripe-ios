@@ -427,6 +427,16 @@ class PaymentSheetAPITest: XCTestCase {
         }
 
         wait(for: [updateExpectation], timeout: 10)
+        
+        let secondUpdateExpectation = expectation(description: "Second update callback is invoked")
+        // ...subsequent updates should also succeed
+        intentConfig.mode = .setup(currency: nil, setupFutureUsage: .onSession)
+        flowController.update(intentConfiguration: intentConfig) { error in
+            XCTAssertNil(error)
+            secondUpdateExpectation.fulfill()
+        }
+
+        self.wait(for: [secondUpdateExpectation], timeout: 10)
     }
 
     func testUpdateFails() {
@@ -448,17 +458,27 @@ class PaymentSheetAPITest: XCTestCase {
 
         self.wait(for: [createFlowControllerExpectation], timeout: 10)
 
-        let updateExpectation = expectation(description: "Update callback is invoked")
+        let failedUpdateExpectation = expectation(description: "First failed update callback is invoked")
         // ...updating w/ an invalid intent config should fail...
         intentConfig.mode = .setup(currency: "Invalid currency", setupFutureUsage: .offSession)
-        flowController.update(intentConfiguration: intentConfig) { [flowController] error in
+        flowController.update(intentConfiguration: intentConfig) { error in
             XCTAssertNotNil(error)
             // ...the paymentOption should be nil...
-            XCTAssertNil(flowController?.paymentOption)
-            updateExpectation.fulfill()
+            XCTAssertNil(flowController.paymentOption)
+            failedUpdateExpectation.fulfill()
         }
 
-        self.wait(for: [updateExpectation], timeout: 10)
+        self.wait(for: [failedUpdateExpectation], timeout: 10)
+
+        let secondUpdateExpectation = expectation(description: "Second update callback is invoked")
+        // ...subsequent updates should succeed
+        intentConfig.mode = .setup(currency: nil, setupFutureUsage: .onSession)
+        flowController.update(intentConfiguration: intentConfig) { error in
+            XCTAssertNil(error)
+            secondUpdateExpectation.fulfill()
+        }
+
+        self.wait(for: [secondUpdateExpectation], timeout: 10)
     }
 
     /// Tests that when update is called while another update operation is in progress we ignore the in-flight update
@@ -496,86 +516,6 @@ class PaymentSheetAPITest: XCTestCase {
         }
 
         self.wait(for: [updateExpectation], timeout: 10)
-    }
-
-    func testUpdateMultiple() {
-        var intentConfig = PaymentSheet.IntentConfiguration(mode: .payment(amount: 1000, currency: "USD")) { _, _ in
-            // These tests don't confirm, so this is unused
-        }
-
-        var flowController: PaymentSheet.FlowController!
-        let createFlowControllerExpectation = expectation(description: "Create flow controller expectation")
-
-        PaymentSheet.FlowController.create(intentConfig: intentConfig, configuration: configuration) { result in
-            switch result {
-            case .success(let sut):
-                flowController = sut
-                createFlowControllerExpectation.fulfill()
-            case .failure(let error):
-                XCTFail(error.localizedDescription)
-            }
-        }
-
-        self.wait(for: [createFlowControllerExpectation], timeout: 10)
-
-        let firstUpdateExpectation = expectation(description: "First update callback is invoked")
-        intentConfig.mode = .setup(currency: nil, setupFutureUsage: .offSession)
-        flowController.update(intentConfiguration: intentConfig) { error in
-            XCTAssertNil(error)
-            firstUpdateExpectation.fulfill()
-        }
-
-        self.wait(for: [firstUpdateExpectation], timeout: 10)
-
-        let secondUpdateExpectation = expectation(description: "Second update callback is invoked")
-        // Subsequent updates should also succeed
-        intentConfig.mode = .setup(currency: nil, setupFutureUsage: .onSession)
-        flowController.update(intentConfiguration: intentConfig) { error in
-            XCTAssertNil(error)
-            secondUpdateExpectation.fulfill()
-        }
-
-        self.wait(for: [secondUpdateExpectation], timeout: 10)
-    }
-
-    func testUpdateFollowingFailedUpdate() {
-        var intentConfig = PaymentSheet.IntentConfiguration(mode: .payment(amount: 1000, currency: "USD")) { _, _ in
-            // These tests don't confirm, so this is unused
-        }
-        var flowController: PaymentSheet.FlowController!
-        let createFlowControllerExpectation = expectation(description: "Create flow controller expectation")
-
-        PaymentSheet.FlowController.create(intentConfig: intentConfig, configuration: configuration) { result in
-            switch result {
-            case .success(let sut):
-                flowController = sut
-                createFlowControllerExpectation.fulfill()
-            case .failure(let error):
-                XCTFail(error.localizedDescription)
-            }
-        }
-
-        self.wait(for: [createFlowControllerExpectation], timeout: 10)
-
-        let firstUpdateExpectation = expectation(description: "First update callback is invoked")
-        // ...updating w/ an invalid intent config should fail...
-        intentConfig.mode = .setup(currency: "Invalid currency", setupFutureUsage: .offSession)
-        flowController.update(intentConfiguration: intentConfig) { error in
-            XCTAssertNotNil(error)
-            firstUpdateExpectation.fulfill()
-        }
-
-        self.wait(for: [firstUpdateExpectation], timeout: 10)
-
-        let secondUpdateExpectation = expectation(description: "Second update callback is invoked")
-        // Subsequent updates should succeed
-        intentConfig.mode = .setup(currency: nil, setupFutureUsage: .onSession)
-        flowController.update(intentConfiguration: intentConfig) { error in
-            XCTAssertNil(error)
-            secondUpdateExpectation.fulfill()
-        }
-
-        self.wait(for: [secondUpdateExpectation], timeout: 10)
     }
 
     // MARK: - other tests

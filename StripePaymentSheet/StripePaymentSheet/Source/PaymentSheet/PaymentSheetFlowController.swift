@@ -342,6 +342,7 @@ extension PaymentSheet {
                 mode: .deferredIntent(intentConfiguration),
                 configuration: configuration
             ) { [weak self] loadResult in
+                Thread.callStackSymbols.forEach{print($0)}
                 guard let self = self else {
                     assertionFailure("The PaymentSheet.FlowController instance was destroyed during a call to `update(intentConfiguration:completion:)`")
                     return

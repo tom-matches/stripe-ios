@@ -28,6 +28,7 @@ class SavedPaymentMethodsViewController: UIViewController {
 
     // MARK: - Writable Properties
     weak var delegate: SavedPaymentMethodsViewControllerDelegate?
+    weak var savedPaymentMethodsSheetDelegate: SavedPaymentMethodsSheetDelegate?
     private(set) var isDismissable: Bool = true
     enum Mode {
         case selectingSaved
@@ -121,11 +122,13 @@ class SavedPaymentMethodsViewController: UIViewController {
         savedPaymentMethods: [STPPaymentMethod],
         configuration: SavedPaymentMethodsSheet.Configuration,
         isApplePayEnabled: Bool,
+        savedPaymentMethodsSheetDelegate: SavedPaymentMethodsSheetDelegate?,
         delegate: SavedPaymentMethodsViewControllerDelegate
     ) {
         self.savedPaymentMethods = savedPaymentMethods
         self.configuration = configuration
         self.isApplePayEnabled = isApplePayEnabled
+        self.savedPaymentMethodsSheetDelegate = savedPaymentMethodsSheetDelegate
         self.delegate = delegate
         self.mode = .selectingSaved
         self.addPaymentMethodViewController = nil
@@ -279,7 +282,7 @@ class SavedPaymentMethodsViewController: UIViewController {
                         return
                     }
                     let paymentOptionSelection = SavedPaymentMethodsSheet.PaymentOptionSelection.newPaymentMethod(paymentMethod)
-                    self.configuration.delegate?.didCloseWith(paymentOptionSelection: paymentOptionSelection)
+                    self.savedPaymentMethodsSheetDelegate?.didCloseWith(paymentOptionSelection: paymentOptionSelection)
                     self.delegate?.savedPaymentMethodsViewControllerDidFinish(self)
                 }
             }
@@ -290,24 +293,24 @@ class SavedPaymentMethodsViewController: UIViewController {
         if case .new(let confirmParams) = paymentOption  {
             configuration.apiClient.createPaymentMethod(with: confirmParams.paymentMethodParams) { paymentMethod, error in
                 if let error = error {
-                    self.configuration.delegate?.didError(.createPaymentMethod(error))
+                    self.savedPaymentMethodsSheetDelegate?.didError(.createPaymentMethod(error))
                     return
                 }
                 guard let paymentMethod = paymentMethod else {
                     // TODO: test UI to make sure we fail gracefully
-                    self.configuration.delegate?.didError(.unknown(debugDescription: "No payment method available"))
+                    self.savedPaymentMethodsSheetDelegate?.didError(.unknown(debugDescription: "No payment method available"))
                     return
                 }
                 self.configuration.customerContext.attachPaymentMethod(toCustomer: paymentMethod) { error in
                     guard error == nil else {
                         //TODO: Handle errors properly
-                        self.configuration.delegate?.didError(.attachPaymentMethod(error!))
+                        self.savedPaymentMethodsSheetDelegate?.didError(.attachPaymentMethod(error!))
                         return
                     }
                     let displayData = SavedPaymentMethodsSheet.PaymentOptionSelection.PaymentOptionDisplayData(image: paymentMethod.makeIcon(),
                                                                                                                label: paymentMethod.paymentSheetLabel)
                     let paymentOptionSelection = SavedPaymentMethodsSheet.PaymentOptionSelection.saved(paymentMethod: paymentMethod, paymentOptionDisplayData: displayData)
-                    self.configuration.delegate?.didCloseWith(paymentOptionSelection: paymentOptionSelection)
+                    self.savedPaymentMethodsSheetDelegate?.didCloseWith(paymentOptionSelection: paymentOptionSelection)
                     self.delegate?.savedPaymentMethodsViewControllerDidFinish(self)
                 }
             }
@@ -344,9 +347,9 @@ extension SavedPaymentMethodsViewController: BottomSheetContentViewController {
     func didTapOrSwipeToDismiss() {
         if isDismissable {
             if case .saved(let paymentOption) = self.savedPaymentOptionsViewController.selectedPaymentOption {
-                self.configuration.delegate?.didCloseWith(paymentOptionSelection: paymentOption.toPaymentOptionSelection())
+                self.savedPaymentMethodsSheetDelegate?.didCloseWith(paymentOptionSelection: paymentOption.toPaymentOptionSelection())
             } else {
-                self.configuration.delegate?.didCloseWith(paymentOptionSelection: nil)
+                self.savedPaymentMethodsSheetDelegate?.didCloseWith(paymentOptionSelection: nil)
             }
             delegate?.savedPaymentMethodsViewControllerDidCancel(self)
         }
@@ -362,9 +365,9 @@ extension SavedPaymentMethodsViewController: BottomSheetContentViewController {
 extension SavedPaymentMethodsViewController: SheetNavigationBarDelegate {
     func sheetNavigationBarDidClose(_ sheetNavigationBar: SheetNavigationBar) {
         if case .saved(let paymentOption) = self.savedPaymentOptionsViewController.selectedPaymentOption {
-            self.configuration.delegate?.didCloseWith(paymentOptionSelection: paymentOption.toPaymentOptionSelection())
+            self.savedPaymentMethodsSheetDelegate?.didCloseWith(paymentOptionSelection: paymentOption.toPaymentOptionSelection())
         } else {
-            self.configuration.delegate?.didCloseWith(paymentOptionSelection: nil)
+            self.savedPaymentMethodsSheetDelegate?.didCloseWith(paymentOptionSelection: nil)
         }
         delegate?.savedPaymentMethodsViewControllerDidCancel(self)
 
@@ -414,7 +417,7 @@ extension SavedPaymentMethodsViewController: SavedPaymentMethodsCollectionViewCo
                     } else {
                         createSetupIntentHandler({ result in
                             guard let clientSecret = result else {
-                                self.configuration.delegate?.didError(.setupIntentClientSecretInvalid)
+                                self.savedPaymentMethodsSheetDelegate?.didError(.setupIntentClientSecretInvalid)
                                 return
                             }
                             self.fetchSetupIntent(clientSecret: clientSecret) { result in
@@ -425,7 +428,7 @@ extension SavedPaymentMethodsViewController: SavedPaymentMethodsCollectionViewCo
                                     self.initAddPaymentMethodViewController(intent: setupIntent)
                                     
                                 case .failure(let error):
-                                    self.configuration.delegate?.didError(.setupIntentFetchError(error))
+                                    self.savedPaymentMethodsSheetDelegate?.didError(.setupIntentFetchError(error))
                                 }
                                 self.updateUI()
                             }
@@ -440,10 +443,10 @@ extension SavedPaymentMethodsViewController: SavedPaymentMethodsCollectionViewCo
                 let displayData = SavedPaymentMethodsSheet.PaymentOptionSelection.PaymentOptionDisplayData(image: paymentMethod.makeIcon(),
                                                                                                            label: paymentMethod.paymentSheetLabel)
                 let paymentOptionSelection = SavedPaymentMethodsSheet.PaymentOptionSelection.saved(paymentMethod: paymentMethod, paymentOptionDisplayData: displayData)
-                self.configuration.delegate?.didCloseWith(paymentOptionSelection: paymentOptionSelection)
+                self.savedPaymentMethodsSheetDelegate?.didCloseWith(paymentOptionSelection: paymentOptionSelection)
                 self.delegate?.savedPaymentMethodsViewControllerDidFinish(self)
             case .applePay:
-                self.configuration.delegate?.didCloseWith(paymentOptionSelection: SavedPaymentMethodsSheet.PaymentOptionSelection.applePay())
+                self.savedPaymentMethodsSheetDelegate?.didCloseWith(paymentOptionSelection: SavedPaymentMethodsSheet.PaymentOptionSelection.applePay())
                 self.delegate?.savedPaymentMethodsViewControllerDidFinish(self)
             }
         }
@@ -462,11 +465,11 @@ extension SavedPaymentMethodsViewController: SavedPaymentMethodsCollectionViewCo
             }
             configuration.customerContext.detachPaymentMethod?(fromCustomer: paymentMethod, completion: { error in
                 if let error = error {
-                    self.configuration.delegate?.didError(.detachPaymentMethod(error))
+                    self.savedPaymentMethodsSheetDelegate?.didError(.detachPaymentMethod(error))
                     return
                 }
                 let removedPaymentOption = SavedPaymentMethodsSheet.PaymentOptionSelection.savedPaymentMethod(paymentMethod)
-                self.configuration.delegate?.didDetachPaymentMethod(paymentOptionSelection: removedPaymentOption)
+                self.savedPaymentMethodsSheetDelegate?.didDetachPaymentMethod(paymentOptionSelection: removedPaymentOption)
             })
         }
 }

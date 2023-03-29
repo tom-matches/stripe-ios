@@ -33,6 +33,8 @@ public class SavedPaymentMethodsSheet {
 
     private var savedPaymentMethodsViewController: SavedPaymentMethodsViewController?
 
+    private weak var savedPaymentMethodsSheetDelegate: SavedPaymentMethodsSheetDelegate?
+
     /// The STPPaymentHandler instance
     @available(iOSApplicationExtension, unavailable)
     @available(macCatalystApplicationExtension, unavailable)
@@ -70,7 +72,8 @@ public class SavedPaymentMethodsSheet {
 
     @available(iOSApplicationExtension, unavailable)
     @available(macCatalystApplicationExtension, unavailable)
-    public func present(from presentingViewController: UIViewController) {
+    public func present(from presentingViewController: UIViewController, delegate: SavedPaymentMethodsSheetDelegate? = nil) {
+        self.savedPaymentMethodsSheetDelegate = delegate
         // Retain self when being presented, it is not guarnteed that SavedPaymentMethodsSheet instance
         // will be retained by caller
         let completion: () -> Void = {
@@ -89,7 +92,7 @@ public class SavedPaymentMethodsSheet {
             let error = SavedPaymentMethodsSheetError.unknown(
                 debugDescription: "presentingViewController is already presenting a view controller"
             )
-            configuration.delegate?.didError(error)
+            delegate?.didError(error)
             return
         }
         loadPaymentMethods() { result in
@@ -97,7 +100,7 @@ public class SavedPaymentMethodsSheet {
             case .success(let savedPaymentMethods):
                 self.present(from: presentingViewController, savedPaymentMethods: savedPaymentMethods)
             case .failure(let error):
-                self.configuration.delegate?.didError(.errorFetchingSavedPaymentMethods(error))
+                delegate?.didError(.errorFetchingSavedPaymentMethods(error))
                 return
             }
         }
@@ -120,6 +123,7 @@ public class SavedPaymentMethodsSheet {
                 let savedPaymentSheetVC = SavedPaymentMethodsViewController(savedPaymentMethods: savedPaymentMethods,
                                                                             configuration: self.configuration,
                                                                             isApplePayEnabled: isApplePayEnabled,
+                                                                            savedPaymentMethodsSheetDelegate: self.savedPaymentMethodsSheetDelegate,
                                                                             delegate: self)
                 self.bottomSheetViewController.contentStack = [savedPaymentSheetVC]
             }

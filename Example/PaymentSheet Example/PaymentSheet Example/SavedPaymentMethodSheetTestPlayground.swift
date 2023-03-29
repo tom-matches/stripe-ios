@@ -105,7 +105,7 @@ class SavedPaymentMethodSheetTestPlayground: UIViewController {
     }
     @objc
     func didTapSelectPaymentMethodButton() {
-        savedPaymentMethodsSheet?.present(from: self)
+        savedPaymentMethodsSheet?.present(from: self, delegate: self)
     }
     
     func updateButtons() {
@@ -158,7 +158,6 @@ class SavedPaymentMethodSheetTestPlayground: UIViewController {
         configuration.applePay = applePayConfig()
         configuration.appearance = appearance
         configuration.returnURL = "payments-example://stripe-redirect"
-        configuration.delegate = self
         configuration.selectingSavedCustomHeaderText = selectingSavedCustomHeaderTextField.text
         
         return configuration

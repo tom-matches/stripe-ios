@@ -13,12 +13,7 @@ extension SavedPaymentMethodsSheet {
 
     public struct Configuration {
         public typealias CreateSetupIntentHandlerCallback = ((@escaping (String?) -> Void) -> Void)
-        
-        /// A block that provides a SetupIntent which, when confirmed, will attach a PaymentMethod to the current customer.
-        /// Upon calling this, return a SetupIntent with the current customer set as the `customer`.
-        /// If this is not set, the PaymentMethod will be attached directly to the customer instead.
-        public var createSetupIntentHandler: CreateSetupIntentHandlerCallback?
-        
+               
         private var styleRawValue: Int = 0  // SheetStyle.automatic.rawValue
         /// The color styling to use for PaymentSheet UI
         /// Default value is SheetStyle.automatic
@@ -40,8 +35,12 @@ extension SavedPaymentMethodsSheet {
 
         /// Configuration for setting the text for the header
         public var selectingSavedCustomHeaderText: String?
+        
 
-        public weak var delegate: SavedPaymentMethodsSheetDelegate?
+        /// A block that provides a SetupIntent which, when confirmed, will attach a PaymentMethod to the current customer.
+        /// Upon calling this, return a SetupIntent with the current customer set as the `customer`.
+        /// If this is not set, the PaymentMethod will be attached directly to the customer instead.
+        public var createSetupIntentHandler: CreateSetupIntentHandlerCallback?
 
         /// A URL that redirects back to your app that PaymentSheet can use to auto-dismiss
         /// web views used for additional authentication, e.g. 3DS2
@@ -54,12 +53,10 @@ extension SavedPaymentMethodsSheet {
         
         public init (customerContext: STPBackendAPIAdapter,
                      createSetupIntentHandler: CreateSetupIntentHandlerCallback?,
-                     applePay: ApplePayConfiguration? = nil,
-                     delegate: SavedPaymentMethodsSheetDelegate? = nil) {
+                     applePay: ApplePayConfiguration? = nil) {
             self.customerContext = customerContext
             self.createSetupIntentHandler = createSetupIntentHandler
             self.applePay = applePay
-            self.delegate = delegate
         }
     }
     /// Configuration related to Apple Pay

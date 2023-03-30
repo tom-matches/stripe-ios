@@ -80,7 +80,6 @@ extension SavedPaymentMethodsSheet {
     }
 }
 
-
 extension SavedPaymentMethodsSheet {
     public enum PaymentOptionSelection {
         
@@ -100,7 +99,6 @@ extension SavedPaymentMethodsSheet {
             let data = PaymentOptionDisplayData(image: paymentMethod.makeIcon(), label: paymentMethod.paymentSheetLabel)
             return .new(paymentMethod: paymentMethod, paymentOptionDisplayData: data)
         }
-
         public static func applePay() -> PaymentOptionSelection {
             let displayData = SavedPaymentMethodsSheet.PaymentOptionSelection.PaymentOptionDisplayData(image: Image.apple_pay_mark.makeImage().withRenderingMode(.alwaysOriginal),
                                                                                                        label: String.Localized.apple_pay)
@@ -118,7 +116,7 @@ extension SavedPaymentMethodsSheet {
             }
         }
         
-        public func persistableValue() -> String {
+        func persistablePaymentMethodOptionIdentifier() -> PersistablePaymentMethodOptionIdentifier {
             switch(self) {
             case .applePay:
                 return DefaultPaymentMethodStore.PaymentMethodIdentifier.applePay.value

@@ -208,14 +208,14 @@ class SavedPaymentMethodsCollectionViewController: UIViewController {
 
     // MARK: - Private methods
     private func updateUI() {
-        if let retrieveSelectedPaymentMethodID = self.savedPaymentMethodsConfiguration.customerContext.retrieveSelectedPaymentMethodOption {
-            retrieveSelectedPaymentMethodID { paymentMethodId, error in
+        if let retrieveLastSelectedPaymentMethodID = self.savedPaymentMethodsConfiguration.customerContext.retrieveLastSelectedPaymentMethodOption {
+            retrieveLastSelectedPaymentMethodID { paymentMethodOptionIdentifier, error in
                 guard error == nil,
-                      let paymentMethodId = paymentMethodId else {
+                      let paymentMethodOptionIdentifier = paymentMethodOptionIdentifier else {
                     self.updateUI(defaultPaymentMethod: nil)
                     return
                 }
-                self.updateUI(defaultPaymentMethod: DefaultPaymentMethodStore.PaymentMethodIdentifier(value: paymentMethodId))
+                self.updateUI(defaultPaymentMethod: DefaultPaymentMethodStore.PaymentMethodIdentifier(value: paymentMethodOptionIdentifier))
             }
         } else {
             self.updateUI(defaultPaymentMethod: nil)
@@ -241,7 +241,6 @@ class SavedPaymentMethodsCollectionViewController: UIViewController {
             self.viewModels =
             [.add]
             + (self.configuration.showApplePay ? [.applePay] : [])
-            //            + (configuration.showLink ? [.link] : [])
             + savedPMViewModels
             
             if self.configuration.autoSelectDefaultBehavior != .none {

@@ -263,15 +263,15 @@ class SavedPaymentMethodsViewController: UIViewController {
 
     }
     private func addPaymentOption(paymentOption: PaymentOption) {
-        guard case .new(let confirmParams) = paymentOption else {
+        guard case .new(_) = paymentOption else {
             return
         }
         self.delegate?.savedPaymentMethodsViewControllerShouldConfirm(self, with: paymentOption, completion: { result in
-            print("addPaymentOption completion block\(confirmParams)")
             switch(result) {
             case .canceled:
                 self.updateUI()
             case .failed(let error):
+                //TODO
                 print(error)
             case .completed(let intent):
                 self.actionButton.update(state: .succeeded, animated: true) {
@@ -282,13 +282,13 @@ class SavedPaymentMethodsViewController: UIViewController {
                         return
                     }
                     let paymentOptionSelection = SavedPaymentMethodsSheet.PaymentOptionSelection.newPaymentMethod(paymentMethod)
-                    self.savedPaymentMethodsSheetDelegate?.didCloseWith(paymentOptionSelection: paymentOptionSelection)
-                    self.delegate?.savedPaymentMethodsViewControllerDidFinish(self)
+                    self.setSelectablePaymentMethodAndClose(paymentOptionSelection: paymentOptionSelection)
                 }
+
             }
         })
-        //print(confirmparmas)
     }
+   
     private func addPaymentOptionToCustomer(paymentOption: PaymentOption) {
         if case .new(let confirmParams) = paymentOption  {
             configuration.apiClient.createPaymentMethod(with: confirmParams.paymentMethodParams) { paymentMethod, error in
@@ -307,11 +307,8 @@ class SavedPaymentMethodsViewController: UIViewController {
                         self.savedPaymentMethodsSheetDelegate?.didError(.attachPaymentMethod(error!))
                         return
                     }
-                    let displayData = SavedPaymentMethodsSheet.PaymentOptionSelection.PaymentOptionDisplayData(image: paymentMethod.makeIcon(),
-                                                                                                               label: paymentMethod.paymentSheetLabel)
-                    let paymentOptionSelection = SavedPaymentMethodsSheet.PaymentOptionSelection.saved(paymentMethod: paymentMethod, paymentOptionDisplayData: displayData)
-                    self.savedPaymentMethodsSheetDelegate?.didCloseWith(paymentOptionSelection: paymentOptionSelection)
-                    self.delegate?.savedPaymentMethodsViewControllerDidFinish(self)
+                    let paymentOptionSelection = SavedPaymentMethodsSheet.PaymentOptionSelection.savedPaymentMethod(paymentMethod)
+                    self.setSelectablePaymentMethodAndClose(paymentOptionSelection: paymentOptionSelection)
                 }
             }
         }
@@ -332,6 +329,44 @@ class SavedPaymentMethodsViewController: UIViewController {
             self, action: #selector(didSelectEditSavedPaymentMethodsButton), for: .touchUpInside)
     }
 
+    private func setSelectablePaymentMethodAndClose(paymentOptionSelection: SavedPaymentMethodsSheet.PaymentOptionSelection) {
+        if let setSelectedPaymentMethodOption = self.configuration.customerContext.setLastSelectedPaymentMethodOption {
+            let persistableValue = paymentOptionSelection.persistablePaymentMethodOptionIdentifier()
+            setSelectedPaymentMethodOption(persistableValue) { error in
+                if let error = error {
+                    self.savedPaymentMethodsSheetDelegate?.didError(.persistLastSelectedPaymentMethod(error))
+                }
+                self.savedPaymentMethodsSheetDelegate?.didCloseWith(paymentOptionSelection: paymentOptionSelection)
+                self.delegate?.savedPaymentMethodsViewControllerDidFinish(self)
+            }
+        } else {
+            self.savedPaymentMethodsSheetDelegate?.didCloseWith(paymentOptionSelection: paymentOptionSelection)
+            self.delegate?.savedPaymentMethodsViewControllerDidFinish(self)
+        }
+    }
+    private func setSelectablePaymentMethodOnCancel() {
+        if case .saved(let paymentMethod) = self.savedPaymentOptionsViewController.selectedPaymentOption {
+            let paymentOptionSelection = SavedPaymentMethodsSheet.PaymentOptionSelection.savedPaymentMethod(paymentMethod)
+            let persistableValue = paymentOptionSelection.persistablePaymentMethodOptionIdentifier()
+
+            if let setSelectedPaymentMethodOption = self.configuration.customerContext.setLastSelectedPaymentMethodOption {
+                setSelectedPaymentMethodOption(persistableValue) { error  in
+                    if let error = error {
+                        self.savedPaymentMethodsSheetDelegate?.didError(.persistLastSelectedPaymentMethod(error))
+                    }
+                    self.savedPaymentMethodsSheetDelegate?.didCloseWith(paymentOptionSelection: paymentOptionSelection)
+                    self.delegate?.savedPaymentMethodsViewControllerDidCancel(self)
+                }
+            } else {
+                self.savedPaymentMethodsSheetDelegate?.didCloseWith(paymentOptionSelection: nil)
+                delegate?.savedPaymentMethodsViewControllerDidCancel(self)
+            }
+        } else {
+            self.savedPaymentMethodsSheetDelegate?.didCloseWith(paymentOptionSelection: nil)
+            delegate?.savedPaymentMethodsViewControllerDidCancel(self)
+        }
+    }
+
     @objc
     func didSelectEditSavedPaymentMethodsButton() {
         savedPaymentOptionsViewController.isRemovingPaymentMethods.toggle()
@@ -346,12 +381,7 @@ extension SavedPaymentMethodsViewController: BottomSheetContentViewController {
 
     func didTapOrSwipeToDismiss() {
         if isDismissable {
-            if case .saved(let paymentOption) = self.savedPaymentOptionsViewController.selectedPaymentOption {
-                self.savedPaymentMethodsSheetDelegate?.didCloseWith(paymentOptionSelection: paymentOption.toPaymentOptionSelection())
-            } else {
-                self.savedPaymentMethodsSheetDelegate?.didCloseWith(paymentOptionSelection: nil)
-            }
-            delegate?.savedPaymentMethodsViewControllerDidCancel(self)
+            setSelectablePaymentMethodOnCancel()
         }
     }
 
@@ -364,12 +394,7 @@ extension SavedPaymentMethodsViewController: BottomSheetContentViewController {
 /// :nodoc:
 extension SavedPaymentMethodsViewController: SheetNavigationBarDelegate {
     func sheetNavigationBarDidClose(_ sheetNavigationBar: SheetNavigationBar) {
-        if case .saved(let paymentOption) = self.savedPaymentOptionsViewController.selectedPaymentOption {
-            self.savedPaymentMethodsSheetDelegate?.didCloseWith(paymentOptionSelection: paymentOption.toPaymentOptionSelection())
-        } else {
-            self.savedPaymentMethodsSheetDelegate?.didCloseWith(paymentOptionSelection: nil)
-        }
-        delegate?.savedPaymentMethodsViewControllerDidCancel(self)
+        setSelectablePaymentMethodOnCancel()
 
         if savedPaymentOptionsViewController.isRemovingPaymentMethods {
             savedPaymentOptionsViewController.isRemovingPaymentMethods = false
@@ -440,14 +465,11 @@ extension SavedPaymentMethodsViewController: SavedPaymentMethodsCollectionViewCo
                     self.updateUI()
                 }
             case .saved(let paymentMethod):
-                let displayData = SavedPaymentMethodsSheet.PaymentOptionSelection.PaymentOptionDisplayData(image: paymentMethod.makeIcon(),
-                                                                                                           label: paymentMethod.paymentSheetLabel)
-                let paymentOptionSelection = SavedPaymentMethodsSheet.PaymentOptionSelection.saved(paymentMethod: paymentMethod, paymentOptionDisplayData: displayData)
-                self.savedPaymentMethodsSheetDelegate?.didCloseWith(paymentOptionSelection: paymentOptionSelection)
-                self.delegate?.savedPaymentMethodsViewControllerDidFinish(self)
+                let paymentOptionSelection = SavedPaymentMethodsSheet.PaymentOptionSelection.savedPaymentMethod(paymentMethod)
+                self.setSelectablePaymentMethodAndClose(paymentOptionSelection: paymentOptionSelection)
             case .applePay:
-                self.savedPaymentMethodsSheetDelegate?.didCloseWith(paymentOptionSelection: SavedPaymentMethodsSheet.PaymentOptionSelection.applePay())
-                self.delegate?.savedPaymentMethodsViewControllerDidFinish(self)
+                let paymentOptionSelection = SavedPaymentMethodsSheet.PaymentOptionSelection.applePay()
+                self.setSelectablePaymentMethodAndClose(paymentOptionSelection: paymentOptionSelection)
             }
         }
     private func initAddPaymentMethodViewController(intent: Intent?) {
@@ -474,12 +496,3 @@ extension SavedPaymentMethodsViewController: SavedPaymentMethodsCollectionViewCo
         }
 }
 
-
-extension STPPaymentMethod {
-    func toPaymentOptionSelection() -> SavedPaymentMethodsSheet.PaymentOptionSelection {
-        let displayData = SavedPaymentMethodsSheet.PaymentOptionSelection.PaymentOptionDisplayData(image: self.makeIcon(),
-                                                                                     label: self.paymentSheetLabel)
-        return SavedPaymentMethodsSheet.PaymentOptionSelection.saved(paymentMethod: self,
-                                                                     paymentOptionDisplayData: displayData)
-    }
-}

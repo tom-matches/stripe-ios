@@ -240,13 +240,13 @@ extension STPCustomerContext {
                 completion(nil, error)
                 return
             }
-            self.retrieveSelectedPaymentMethodOption { persistedPaymentMethodOption, error in
+            self.retrieveLastSelectedPaymentMethodOption { paymentMethodOptionIdentifier, error in
                 guard error == nil else {
                     completion(nil, error)
                     return
                 }
-                if let persistedPaymentMethodOption = persistedPaymentMethodOption {
-                    let storedPaymentMethod = DefaultPaymentMethodStore.PaymentMethodIdentifier(value: persistedPaymentMethodOption)
+                if let paymentMethodOptionIdentifier = paymentMethodOptionIdentifier {
+                    let storedPaymentMethod = DefaultPaymentMethodStore.PaymentMethodIdentifier(value: paymentMethodOptionIdentifier)
                     switch(storedPaymentMethod) {
                     case .applePay:
                         completion(SavedPaymentMethodsSheet.PaymentOptionSelection.applePay(), nil)

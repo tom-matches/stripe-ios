@@ -26,6 +26,9 @@ public enum SavedPaymentMethodsSheetError: Error {
     /// Unable to detach a payment method to the customer
     case detachPaymentMethod(Error)
     
+    /// Unable to persist the Last Selected Payment Method
+    case persistLastSelectedPaymentMethod(Error)
+    
     /// An unknown error.
     case unknown(debugDescription: String)
 }

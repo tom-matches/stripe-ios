@@ -410,12 +410,11 @@ open class STPCustomerContext: NSObject, STPBackendAPIAdapter {
             })
         })
     }
-    
-    @objc public func setSelectedPaymentMethodOption(persistableValue: String, completion: @escaping (Error?) -> Void
+    @objc public func setLastSelectedPaymentMethodOption(paymentMethodOptionIdentifier: PersistablePaymentMethodOptionIdentifier, completion: @escaping(Error?) -> Void
     ) {
-        self.saveLastSelectedPaymentMethodID(forCustomer: persistableValue, completion: completion)
+        self.saveLastSelectedPaymentMethodID(forCustomer: paymentMethodOptionIdentifier, completion: completion)
     }
-    @objc public func retrieveSelectedPaymentMethodOption(completion: @escaping (String?, Error?) -> Void
+    @objc public func retrieveLastSelectedPaymentMethodOption(completion: @escaping (PersistablePaymentMethodOptionIdentifier?, Error?) -> Void
     ) {
         self.retrieveLastSelectedPaymentMethodIDForCustomer(completion: completion)
     }

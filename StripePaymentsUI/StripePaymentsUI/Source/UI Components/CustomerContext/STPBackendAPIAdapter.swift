@@ -87,12 +87,14 @@ import UIKit
     )
     
     /// Set the last selected Payment Method Option
-    @objc optional func setSelectedPaymentMethodOption(
-        persistableValue: String, completion: @escaping (Error?) -> Void
+    @objc optional func setLastSelectedPaymentMethodOption(
+        paymentMethodOptionIdentifier: PersistablePaymentMethodOptionIdentifier, completion: @escaping (Error?) -> Void
     )
     /// Retrieve the last selected Payment Method Option for the customer
-    @objc optional func retrieveSelectedPaymentMethodOption(
-        completion: @escaping (String?, Error?) -> Void
+    @objc optional func retrieveLastSelectedPaymentMethodOption(
+        completion: @escaping (PersistablePaymentMethodOptionIdentifier?, Error?) -> Void
     )
 
 }
+
+public typealias PersistablePaymentMethodOptionIdentifier = String

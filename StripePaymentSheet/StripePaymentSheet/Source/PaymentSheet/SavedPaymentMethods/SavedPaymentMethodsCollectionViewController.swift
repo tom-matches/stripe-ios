@@ -9,6 +9,7 @@ import UIKit
 @_spi(STP) import StripeCore
 @_spi(STP) import StripePayments
 @_spi(STP) import StripeUICore
+@_spi(STP) import StripePaymentsUI
 
 protocol SavedPaymentMethodsCollectionViewControllerDelegate: AnyObject {
     func didUpdateSelection(
@@ -38,7 +39,7 @@ class SavedPaymentMethodsCollectionViewController: UIViewController {
         case saved(paymentMethod: STPPaymentMethod)
         case add
 
-        static func ==(lhs: Selection, rhs: DefaultPaymentMethodStore.PaymentMethodIdentifier?) -> Bool {
+        static func ==(lhs: Selection, rhs: PersistablePaymentMethodOption?) -> Bool {
             switch lhs {
             case .applePay:
                 return rhs == .applePay
@@ -209,20 +210,20 @@ class SavedPaymentMethodsCollectionViewController: UIViewController {
     // MARK: - Private methods
     private func updateUI() {
         if let retrieveLastSelectedPaymentMethodID = self.savedPaymentMethodsConfiguration.customerContext.retrieveLastSelectedPaymentMethodOption {
-            retrieveLastSelectedPaymentMethodID { paymentMethodOptionIdentifier, error in
+            retrieveLastSelectedPaymentMethodID { type, id, error in
                 guard error == nil,
-                      let paymentMethodOptionIdentifier = paymentMethodOptionIdentifier else {
+                      let defaultPaymentMethod = PersistablePaymentMethodOption(type: type, id: id) else {
                     self.updateUI(defaultPaymentMethod: nil)
                     return
                 }
-                self.updateUI(defaultPaymentMethod: DefaultPaymentMethodStore.PaymentMethodIdentifier(value: paymentMethodOptionIdentifier))
+                self.updateUI(defaultPaymentMethod: defaultPaymentMethod)//DefaultPaymentMethodStore.PaymentMethodIdentifier(value: paymentMethodOptionIdentifier))
             }
         } else {
             self.updateUI(defaultPaymentMethod: nil)
         }
     }
     
-    private func updateUI(defaultPaymentMethod: DefaultPaymentMethodStore.PaymentMethodIdentifier?) {
+    private func updateUI(defaultPaymentMethod: PersistablePaymentMethodOption?) {
         DispatchQueue.main.async {
             // Move default to front
             var savedPaymentMethods = self.savedPaymentMethods

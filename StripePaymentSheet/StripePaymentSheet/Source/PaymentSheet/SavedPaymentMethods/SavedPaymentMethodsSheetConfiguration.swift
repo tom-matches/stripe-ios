@@ -116,14 +116,14 @@ extension SavedPaymentMethodsSheet {
             }
         }
         
-        func persistablePaymentMethodOptionIdentifier() -> PersistablePaymentMethodOptionIdentifier {
+        func persistablePaymentMethodOption() -> (PersistablePaymentMethodOptionType, PersistablePaymentMethodOptionIdentifier?) {
             switch(self) {
             case .applePay:
-                return DefaultPaymentMethodStore.PaymentMethodIdentifier.applePay.value
+                return (.applePay, nil)
             case .saved(let paymentMethod, _):
-                return paymentMethod.stripeId
+                return (.stripe, paymentMethod.stripeId)
             case .new(let paymentMethod, _):
-                return paymentMethod.stripeId
+                return (.stripe, paymentMethod.stripeId)
             }
         }
     }

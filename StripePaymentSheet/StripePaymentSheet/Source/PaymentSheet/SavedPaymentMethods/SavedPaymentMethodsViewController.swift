@@ -331,8 +331,8 @@ class SavedPaymentMethodsViewController: UIViewController {
 
     private func setSelectablePaymentMethodAndClose(paymentOptionSelection: SavedPaymentMethodsSheet.PaymentOptionSelection) {
         if let setSelectedPaymentMethodOption = self.configuration.customerContext.setLastSelectedPaymentMethodOption {
-            let persistableValue = paymentOptionSelection.persistablePaymentMethodOptionIdentifier()
-            setSelectedPaymentMethodOption(persistableValue) { error in
+            let (type, value) = paymentOptionSelection.persistablePaymentMethodOption()
+            setSelectedPaymentMethodOption(type, value) { error in
                 if let error = error {
                     self.savedPaymentMethodsSheetDelegate?.didError(.persistLastSelectedPaymentMethod(error))
                 }
@@ -347,10 +347,9 @@ class SavedPaymentMethodsViewController: UIViewController {
     private func setSelectablePaymentMethodOnCancel() {
         if case .saved(let paymentMethod) = self.savedPaymentOptionsViewController.selectedPaymentOption {
             let paymentOptionSelection = SavedPaymentMethodsSheet.PaymentOptionSelection.savedPaymentMethod(paymentMethod)
-            let persistableValue = paymentOptionSelection.persistablePaymentMethodOptionIdentifier()
-
+            let (type, value) = paymentOptionSelection.persistablePaymentMethodOption()
             if let setSelectedPaymentMethodOption = self.configuration.customerContext.setLastSelectedPaymentMethodOption {
-                setSelectedPaymentMethodOption(persistableValue) { error  in
+                setSelectedPaymentMethodOption(type, value) { error in
                     if let error = error {
                         self.savedPaymentMethodsSheetDelegate?.didError(.persistLastSelectedPaymentMethod(error))
                     }

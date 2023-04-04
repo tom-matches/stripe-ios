@@ -410,13 +410,34 @@ open class STPCustomerContext: NSObject, STPBackendAPIAdapter {
             })
         })
     }
-    @objc public func setLastSelectedPaymentMethodOption(paymentMethodOptionIdentifier: PersistablePaymentMethodOptionIdentifier, completion: @escaping(Error?) -> Void
+    @objc public func setLastSelectedPaymentMethodOption(type: PersistablePaymentMethodOptionType,
+                                                         identifier: PersistablePaymentMethodOptionIdentifier?, completion: @escaping(Error?) -> Void
     ) {
-        self.saveLastSelectedPaymentMethodID(forCustomer: paymentMethodOptionIdentifier, completion: completion)
+        guard let identifier = PersistablePaymentMethodOption(type: type, id: identifier) else {
+            // TODO: Define errors
+            completion(nil)
+            return
+        }
+        self.saveLastSelectedPaymentMethodID(forCustomer: identifier.value, completion: completion)
     }
-    @objc public func retrieveLastSelectedPaymentMethodOption(completion: @escaping (PersistablePaymentMethodOptionIdentifier?, Error?) -> Void
+    @objc public func retrieveLastSelectedPaymentMethodOption(completion: @escaping (PersistablePaymentMethodOptionType, PersistablePaymentMethodOptionIdentifier?, Error?) -> Void
     ) {
-        self.retrieveLastSelectedPaymentMethodIDForCustomer(completion: completion)
+        self.retrieveLastSelectedPaymentMethodIDForCustomer { paymentMethod, error in
+            guard error == nil, let paymentMethod = paymentMethod else {
+                completion(.none, nil, error)
+                return
+            }
+
+            let paymentMethodOption = PersistablePaymentMethodOption(value: paymentMethod)
+            switch(paymentMethodOption) {
+            case .applePay:
+                completion(.applePay, nil, nil)
+            case .link:
+                completion(.link, nil, nil)
+            case .stripe(let id):
+                completion(.stripe, id, nil)
+            }
+        }
     }
 }
 

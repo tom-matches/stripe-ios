@@ -414,8 +414,7 @@ open class STPCustomerContext: NSObject, STPBackendAPIAdapter {
                                                          identifier: PersistablePaymentMethodOptionIdentifier?, completion: @escaping(Error?) -> Void
     ) {
         guard let identifier = PersistablePaymentMethodOption(type: type, id: identifier) else {
-            // TODO: Define errors
-            completion(nil)
+            completion(PersistablePaymentMethodOptionError.noCorrespondingType(type, identifier))
             return
         }
         self.saveLastSelectedPaymentMethodID(forCustomer: identifier.value, completion: completion)

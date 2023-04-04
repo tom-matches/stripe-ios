@@ -3,8 +3,6 @@
 //  StripePaymentsUI
 //
 
-import Foundation
-
 @objc public enum PersistablePaymentMethodOptionType: Int {
     case applePay
     case link
@@ -14,6 +12,9 @@ import Foundation
 
 public typealias PersistablePaymentMethodOptionIdentifier = String
 
+public enum PersistablePaymentMethodOptionError: Error {
+    case noCorrespondingType(PersistablePaymentMethodOptionType, PersistablePaymentMethodOptionIdentifier?)
+}
 
 public enum PersistablePaymentMethodOption: Equatable {
     case applePay

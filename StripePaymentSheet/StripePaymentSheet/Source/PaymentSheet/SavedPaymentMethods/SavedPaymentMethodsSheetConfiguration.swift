@@ -30,18 +30,6 @@ extension SavedPaymentMethodsSheet {
         /// Describes the appearance of SavdPaymentMethodsSheet
         public var appearance = PaymentSheet.Appearance.default
 
-        /// Configuration related to the Stripe Customer
-        public var customerContext: STPBackendAPIAdapter
-
-        /// Configuration for setting the text for the header
-        public var selectingSavedCustomHeaderText: String?
-        
-
-        /// A block that provides a SetupIntent which, when confirmed, will attach a PaymentMethod to the current customer.
-        /// Upon calling this, return a SetupIntent with the current customer set as the `customer`.
-        /// If this is not set, the PaymentMethod will be attached directly to the customer instead.
-        public var createSetupIntentHandler: CreateSetupIntentHandlerCallback?
-
         /// A URL that redirects back to your app that PaymentSheet can use to auto-dismiss
         /// web views used for additional authentication, e.g. 3DS2
         public var returnURL: String?
@@ -49,33 +37,26 @@ extension SavedPaymentMethodsSheet {
         /// The APIClient instance used to make requests to Stripe
         public var apiClient: STPAPIClient = STPAPIClient.shared
 
-        public var applePay: ApplePayConfiguration?
+        public var applePayEnabled: Bool
+        
+        /// Configuration related to the Stripe Customer
+        public var customerContext: STPBackendAPIAdapter
+
+        /// Configuration for setting the text for the header
+        public var selectingSavedCustomHeaderText: String?
+
+        /// A block that provides a SetupIntent which, when confirmed, will attach a PaymentMethod to the current customer.
+        /// Upon calling this, return a SetupIntent with the current customer set as the `customer`.
+        /// If this is not set, the PaymentMethod will be attached directly to the customer instead.
+        public var createSetupIntentHandler: CreateSetupIntentHandlerCallback?
+
         
         public init (customerContext: STPBackendAPIAdapter,
-                     createSetupIntentHandler: CreateSetupIntentHandlerCallback?,
-                     applePay: ApplePayConfiguration? = nil) {
+                     applePayEnabled: Bool,
+                     createSetupIntentHandler: CreateSetupIntentHandlerCallback? = nil) {
             self.customerContext = customerContext
             self.createSetupIntentHandler = createSetupIntentHandler
-            self.applePay = applePay
-        }
-    }
-    /// Configuration related to Apple Pay
-    public struct ApplePayConfiguration {
-        /// The Apple Merchant Identifier to use during Apple Pay transactions.
-        /// To obtain one, see https://stripe.com/docs/apple-pay#native
-        public let merchantId: String
-
-        /// The two-letter ISO 3166 code of the country of your business, e.g. "US"
-        /// See your account's country value here https://dashboard.stripe.com/settings/account
-        public let merchantCountryCode: String
-
-        /// Initializes a ApplePayConfiguration
-        public init(
-            merchantId: String,
-            merchantCountryCode: String
-        ) {
-            self.merchantId = merchantId
-            self.merchantCountryCode = merchantCountryCode
+            self.applePayEnabled = applePayEnabled
         }
     }
 }

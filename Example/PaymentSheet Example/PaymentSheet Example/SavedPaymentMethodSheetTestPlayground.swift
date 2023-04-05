@@ -154,8 +154,8 @@ class SavedPaymentMethodSheetTestPlayground: UIViewController {
         let customerContext = STPCustomerContext(customerId: customerId, ephemeralKeySecret: ephemeralKey)
         self.customerContext = customerContext
         var configuration = SavedPaymentMethodsSheet.Configuration(customerContext: customerContext,
+                                                                   applePayEnabled: applePayEnabled(),
                                                                    createSetupIntentHandler: setupIntentHandler(customerId: customerId))
-        configuration.applePay = applePayConfig()
         configuration.appearance = appearance
         configuration.returnURL = "payments-example://stripe-redirect"
         configuration.selectingSavedCustomHeaderText = selectingSavedCustomHeaderTextField.text
@@ -173,12 +173,12 @@ class SavedPaymentMethodSheetTestPlayground: UIViewController {
             return nil
         }
     }
-    func applePayConfig() -> SavedPaymentMethodsSheet.ApplePayConfiguration? {
+    func applePayEnabled() -> Bool {
         switch(applePaySelector.selectedSegmentIndex) {
         case 0:
-            return .init(merchantId: "com.foo.example", merchantCountryCode: "US")
+            return true
         default:
-            return nil
+            return false
         }
     }
 }

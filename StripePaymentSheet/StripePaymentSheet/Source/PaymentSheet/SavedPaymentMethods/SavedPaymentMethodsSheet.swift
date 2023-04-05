@@ -119,7 +119,7 @@ public class SavedPaymentMethodsSheet {
        
         loadSpecsPromise.observe { _ in
             DispatchQueue.main.async {
-                let isApplePayEnabled = StripeAPI.deviceSupportsApplePay() && self.configuration.applePay != nil
+                let isApplePayEnabled = StripeAPI.deviceSupportsApplePay() && self.configuration.applePayEnabled
                 let savedPaymentSheetVC = SavedPaymentMethodsViewController(savedPaymentMethods: savedPaymentMethods,
                                                                             configuration: self.configuration,
                                                                             isApplePayEnabled: isApplePayEnabled,

@@ -228,9 +228,9 @@ extension SavedPaymentMethodsSheet: LoadingViewControllerDelegate {
 }
 
 extension STPCustomerContext {
-    /// Returns the currently selected Payment Option for this customer context.
+    /// Returns the selected Payment Option for this customer context.
     /// You can use this to obtain the selected payment method without loading the SavedPaymentMethodsSheet.
-    public func retrieveSelectedPaymentOption(
+    public func retrievePaymentOptionSelection(
         completion: @escaping (SavedPaymentMethodsSheet.PaymentOptionSelection?, Error?) -> Void
     ) {
         self.listPaymentMethodsForCustomer { paymentMethods, error in
@@ -240,7 +240,7 @@ extension STPCustomerContext {
                 completion(nil, error)
                 return
             }
-            self.retrieveLastSelectedPaymentMethodOption { paymentMethodOption, error in
+            self.retrieveSelectedPaymentMethodOption { paymentMethodOption, error in
                 guard error == nil,
                 let paymentMethodOption = paymentMethodOption else {
                     completion(nil, error)

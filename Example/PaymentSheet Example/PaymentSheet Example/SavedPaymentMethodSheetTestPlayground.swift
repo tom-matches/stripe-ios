@@ -216,7 +216,7 @@ extension SavedPaymentMethodSheetTestPlayground {
 
                 self.selectPaymentMethodButton.isEnabled = true
 
-                self.customerContext?.retrieveSelectedPaymentOption { selection, error in
+                self.customerContext?.retrievePaymentOptionSelection { selection, error in
                     self.paymentOptionSelection = selection
                     self.updateButtons()
                 }

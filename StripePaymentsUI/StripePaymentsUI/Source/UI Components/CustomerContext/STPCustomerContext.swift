@@ -410,7 +410,7 @@ open class STPCustomerContext: NSObject, STPBackendAPIAdapter {
             })
         })
     }
-    @objc public func setLastSelectedPaymentMethodOption(paymentOption: PersistablePaymentMethodOption, completion: @escaping(Error?) -> Void
+    @objc public func setSelectedPaymentMethodOption(paymentOption: PersistablePaymentMethodOption, completion: @escaping(Error?) -> Void
     ) {
         let encoder = JSONEncoder()
         do {
@@ -425,7 +425,7 @@ open class STPCustomerContext: NSObject, STPBackendAPIAdapter {
             return
         }
     }
-    @objc public func retrieveLastSelectedPaymentMethodOption(completion: @escaping (PersistablePaymentMethodOption?, Error?) -> Void
+    @objc public func retrieveSelectedPaymentMethodOption(completion: @escaping (PersistablePaymentMethodOption?, Error?) -> Void
     ) {
         self.retrieveLastSelectedPaymentMethodIDForCustomer { paymentMethod, error in
             guard let paymentMethod = paymentMethod,

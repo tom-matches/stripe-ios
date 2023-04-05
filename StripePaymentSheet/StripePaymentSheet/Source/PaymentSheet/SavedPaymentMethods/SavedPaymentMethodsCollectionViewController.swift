@@ -209,8 +209,8 @@ class SavedPaymentMethodsCollectionViewController: UIViewController {
 
     // MARK: - Private methods
     private func updateUI() {
-        if let retrieveLastSelectedPaymentMethodID = self.savedPaymentMethodsConfiguration.customerContext.retrieveLastSelectedPaymentMethodOption {
-            retrieveLastSelectedPaymentMethodID { paymentMethodOption, error in
+        if let retrieveSelectedPaymentMethodID = self.savedPaymentMethodsConfiguration.customerContext.retrieveSelectedPaymentMethodOption {
+            retrieveSelectedPaymentMethodID { paymentMethodOption, error in
                 guard error == nil,
                       let defaultPaymentMethod = paymentMethodOption else {
                     self.updateUI(defaultPaymentMethod: nil)

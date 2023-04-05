@@ -77,12 +77,16 @@ final class DefaultPaymentMethodStore {
         let decoder = JSONDecoder()
         do {
             let decoded = try decoder.decode(PersistablePaymentMethodOption.self, from: data)
-            if decoded.isApplePay {
+            switch(decoded.type) {
+            case .applePay:
                 return .applePay
-            } else if decoded.isLink {
+            case .link:
                 return .link
-            } else {
+            case .stripe:
                 return .stripe(id: decoded.stripePaymentMethodId ?? "")
+            @unknown default:
+                assertionFailure("Unaccounted for payment method type")
+                return .stripe(id: "")
             }
         } catch {
             return PaymentMethodIdentifier(value: value)

@@ -9,54 +9,54 @@ public enum PersistablePaymentMethodOptionError: Error {
 }
 
 @objc public class PersistablePaymentMethodOption: NSObject, Codable {
-    public let isApplePay: Bool
-    public let isLink: Bool
+    public enum PersistablePaymentMethodOptionType: Codable {
+        case applePay
+        case link
+        case stripe
+    }
     public let stripePaymentMethodId: String?
-    
+    public let type: PersistablePaymentMethodOptionType
     public var value: String? {
-        if isApplePay {
+        switch(type) {
+        case .applePay:
             return "apple_pay"
-        } else if isLink {
+        case .link:
             return "link"
-        } else {
+        case .stripe:
             return stripePaymentMethodId
         }
     }
 
     public static func applePay() -> PersistablePaymentMethodOption {
-        return PersistablePaymentMethodOption(isApplePay: true, isLink: false, stripePaymentMethodId: nil)
+        return PersistablePaymentMethodOption(type: .applePay, stripePaymentMethodId: nil)
     }
     public static func link() -> PersistablePaymentMethodOption {
-        return PersistablePaymentMethodOption(isApplePay: false, isLink: true, stripePaymentMethodId: nil)
+        return PersistablePaymentMethodOption(type: .link, stripePaymentMethodId: nil)
     }
 
     public static func stripePaymentMethod(_ paymentMethodId: String) -> PersistablePaymentMethodOption {
-        return PersistablePaymentMethodOption(isApplePay: false, isLink: false, stripePaymentMethodId: paymentMethodId)
+        return PersistablePaymentMethodOption(type: .stripe, stripePaymentMethodId: paymentMethodId)
     }
 
     public init?(legacyValue: String) {
         switch legacyValue {
         case "apple_pay":
-            self.isApplePay = true
-            self.isLink = false
+            self.type = .applePay
             self.stripePaymentMethodId = nil
         case "link":
-            self.isApplePay = false
-            self.isLink = true
+            self.type = .link
             self.stripePaymentMethodId = nil
         default:
             if legacyValue.hasPrefix("pm_") {
-                self.isApplePay = false
-                self.isLink = false
+                self.type = .stripe
                 self.stripePaymentMethodId = legacyValue
             } else {
                  return nil
             }
         }
     }
-    private init(isApplePay: Bool, isLink: Bool, stripePaymentMethodId: String?) {
-        self.isApplePay = isApplePay
-        self.isLink = isLink
+    private init(type: PersistablePaymentMethodOptionType, stripePaymentMethodId: String?) {
+        self.type = type
         self.stripePaymentMethodId = stripePaymentMethodId
     }
 }

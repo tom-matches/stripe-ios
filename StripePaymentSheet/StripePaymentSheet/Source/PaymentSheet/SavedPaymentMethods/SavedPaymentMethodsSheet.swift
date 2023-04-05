@@ -246,15 +246,17 @@ extension STPCustomerContext {
                     completion(nil, error)
                     return
                 }
-                if paymentMethodOption.isApplePay {
+                switch(paymentMethodOption.type) {
+                case .applePay:
                     completion(SavedPaymentMethodsSheet.PaymentOptionSelection.applePay(), nil)
-                } else if let stripePaymentMethod = paymentMethodOption.stripePaymentMethodId {
-                    guard let matchingPaymentMethod = paymentMethods.first(where:{ $0.stripeId == stripePaymentMethod }) else {
+                case .stripe:
+                    guard let stripePaymentMethod = paymentMethodOption.stripePaymentMethodId,
+                        let matchingPaymentMethod = paymentMethods.first(where:{ $0.stripeId == stripePaymentMethod }) else {
                         completion(nil, nil)
                         return
                     }
                     completion(SavedPaymentMethodsSheet.PaymentOptionSelection.savedPaymentMethod(matchingPaymentMethod), nil)
-                } else {
+                default:
                     completion(nil, nil)
                 }
             }

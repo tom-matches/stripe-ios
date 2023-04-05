@@ -42,7 +42,7 @@ class SavedPaymentMethodsCollectionViewController: UIViewController {
         static func ==(lhs: Selection, rhs: PersistablePaymentMethodOption?) -> Bool {
             switch lhs {
             case .applePay:
-                return rhs?.isApplePay ?? false
+                return rhs?.type == .applePay
             case .saved(let paymentMethod):
                 return paymentMethod.stripeId == rhs?.stripePaymentMethodId
             case .add:

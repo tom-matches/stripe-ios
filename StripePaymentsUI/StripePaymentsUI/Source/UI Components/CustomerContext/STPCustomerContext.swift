@@ -410,31 +410,39 @@ open class STPCustomerContext: NSObject, STPBackendAPIAdapter {
             })
         })
     }
-    @objc public func setLastSelectedPaymentMethodOption(type: PersistablePaymentMethodOptionType,
-                                                         identifier: PersistablePaymentMethodOptionIdentifier?, completion: @escaping(Error?) -> Void
+    @objc public func setLastSelectedPaymentMethodOption(paymentOption: PersistablePaymentMethodOption, completion: @escaping(Error?) -> Void
     ) {
-        guard let identifier = PersistablePaymentMethodOption(type: type, id: identifier) else {
-            completion(PersistablePaymentMethodOptionError.noCorrespondingType(type, identifier))
-            return
-        }
-        self.saveLastSelectedPaymentMethodID(forCustomer: identifier.value, completion: completion)
-    }
-    @objc public func retrieveLastSelectedPaymentMethodOption(completion: @escaping (PersistablePaymentMethodOptionType, PersistablePaymentMethodOptionIdentifier?, Error?) -> Void
-    ) {
-        self.retrieveLastSelectedPaymentMethodIDForCustomer { paymentMethod, error in
-            guard error == nil, let paymentMethod = paymentMethod else {
-                completion(.none, nil, error)
+        let encoder = JSONEncoder()
+        do {
+            let data = try encoder.encode(paymentOption)
+            guard let data_string = String(data: data, encoding: .utf8) else {
+                completion(PersistablePaymentMethodOptionError.unableToEncode(paymentOption))
                 return
             }
-
-            let paymentMethodOption = PersistablePaymentMethodOption(value: paymentMethod)
-            switch(paymentMethodOption) {
-            case .applePay:
-                completion(.applePay, nil, nil)
-            case .link:
-                completion(.link, nil, nil)
-            case .stripe(let id):
-                completion(.stripe, id, nil)
+            self.saveLastSelectedPaymentMethodID(forCustomer: data_string, completion: completion)
+        } catch {
+            completion(PersistablePaymentMethodOptionError.unableToEncode(paymentOption))
+            return
+        }
+    }
+    @objc public func retrieveLastSelectedPaymentMethodOption(completion: @escaping (PersistablePaymentMethodOption?, Error?) -> Void
+    ) {
+        self.retrieveLastSelectedPaymentMethodIDForCustomer { paymentMethod, error in
+            guard let paymentMethod = paymentMethod,
+                  let data = paymentMethod.data(using: .utf8) else {
+                completion(nil, nil)
+                return
+            }
+            let decoder = JSONDecoder()
+            do {
+                let decoded = try decoder.decode(PersistablePaymentMethodOption.self, from: data)
+                completion(decoded, nil)
+            } catch {
+                if let legacyValue = PersistablePaymentMethodOption(legacyValue: paymentMethod) {
+                    completion(legacyValue, nil)
+                    return
+                }
+                completion(nil, PersistablePaymentMethodOptionError.unableToDecode(paymentMethod))
             }
         }
     }

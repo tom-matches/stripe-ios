@@ -240,34 +240,24 @@ extension STPCustomerContext {
                 completion(nil, error)
                 return
             }
-            self.retrieveLastSelectedPaymentMethodOption { paymentMethodType, paymentMethodOptionIdentifier, error in
-                guard error == nil else {
+            self.retrieveLastSelectedPaymentMethodOption { paymentMethodOption, error in
+                guard error == nil,
+                let paymentMethodOption = paymentMethodOption else {
                     completion(nil, error)
                     return
                 }
-                if let storedPaymentMethod = PersistablePaymentMethodOption(type: paymentMethodType, id: paymentMethodOptionIdentifier) {
-                    switch(storedPaymentMethod) {
-                    case .applePay:
-                        completion(SavedPaymentMethodsSheet.PaymentOptionSelection.applePay(), nil)
-                    case .link:
-                        //TODO
-                        print("we got link")
-                    case .stripe(let id):
-                        guard let matchingPaymentMethod = paymentMethods.first(where:{ $0.stripeId == id }) else {
-                            completion(nil, nil)
-                            return
-                        }
-                        completion(SavedPaymentMethodsSheet.PaymentOptionSelection.savedPaymentMethod(matchingPaymentMethod), nil)
-                        return
-                    default:
+                if paymentMethodOption.isApplePay {
+                    completion(SavedPaymentMethodsSheet.PaymentOptionSelection.applePay(), nil)
+                } else if let stripePaymentMethod = paymentMethodOption.stripePaymentMethodId {
+                    guard let matchingPaymentMethod = paymentMethods.first(where:{ $0.stripeId == stripePaymentMethod }) else {
                         completion(nil, nil)
+                        return
                     }
+                    completion(SavedPaymentMethodsSheet.PaymentOptionSelection.savedPaymentMethod(matchingPaymentMethod), nil)
                 } else {
                     completion(nil, nil)
                 }
-                
             }
-
         }
     }
 }

@@ -42,9 +42,9 @@ class SavedPaymentMethodsCollectionViewController: UIViewController {
         static func ==(lhs: Selection, rhs: PersistablePaymentMethodOption?) -> Bool {
             switch lhs {
             case .applePay:
-                return rhs == .applePay
+                return rhs?.isApplePay ?? false
             case .saved(let paymentMethod):
-                return paymentMethod.stripeId == rhs?.value
+                return paymentMethod.stripeId == rhs?.stripePaymentMethodId
             case .add:
                 return false
             }
@@ -210,13 +210,13 @@ class SavedPaymentMethodsCollectionViewController: UIViewController {
     // MARK: - Private methods
     private func updateUI() {
         if let retrieveLastSelectedPaymentMethodID = self.savedPaymentMethodsConfiguration.customerContext.retrieveLastSelectedPaymentMethodOption {
-            retrieveLastSelectedPaymentMethodID { type, id, error in
+            retrieveLastSelectedPaymentMethodID { paymentMethodOption, error in
                 guard error == nil,
-                      let defaultPaymentMethod = PersistablePaymentMethodOption(type: type, id: id) else {
+                      let defaultPaymentMethod = paymentMethodOption else {
                     self.updateUI(defaultPaymentMethod: nil)
                     return
                 }
-                self.updateUI(defaultPaymentMethod: defaultPaymentMethod)//DefaultPaymentMethodStore.PaymentMethodIdentifier(value: paymentMethodOptionIdentifier))
+                self.updateUI(defaultPaymentMethod: defaultPaymentMethod)
             }
         } else {
             self.updateUI(defaultPaymentMethod: nil)

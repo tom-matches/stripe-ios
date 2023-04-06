@@ -13,4 +13,7 @@ import Foundation
  */
 public struct ScannedCard: Equatable {
     public let pan: String
+    public let expiryMonth: String?
+    public let expiryYear: String?
+    public let name: String?
 }
